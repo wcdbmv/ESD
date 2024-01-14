@@ -4,7 +4,7 @@
 
 
 class Graph;
-class SearchResult;
+struct SearchResult;
 
 
 SearchResult depthFirstSearch(const Graph& graph, Vertex from, Vertex to);

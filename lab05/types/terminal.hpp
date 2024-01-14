@@ -13,6 +13,8 @@ struct Terminal {
 	explicit Terminal(std::string_view name)
 		: name(name.begin(), name.end()) {}
 
+	virtual ~Terminal() = default;
+
 	[[nodiscard]] virtual bool IsConstant() const noexcept = 0;
 	[[nodiscard]] bool IsVariable() const noexcept { return !IsConstant(); }
 

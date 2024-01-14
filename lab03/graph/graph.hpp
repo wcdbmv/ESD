@@ -17,7 +17,7 @@ public:
 	friend std::istream& operator>>(std::istream& is, HyperGraph& graph);
 	friend std::ostream& operator<<(std::ostream& os, const HyperGraph& graph);
 
-	static HyperGraph readFromFile(const std::filesystem::path& path);
+	[[nodiscard]] static HyperGraph readFromFile(const std::filesystem::path& path);
 	void writeToFile(const std::filesystem::path& path) const;
 
 private:
