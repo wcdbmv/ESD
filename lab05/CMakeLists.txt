@@ -5,19 +5,19 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(
   HEADERS
-  types/atom.hpp
-  types/constant.hpp
-  types/name.hpp
-  types/terminal.hpp
-  types/variable.hpp
-  unification.hpp
+  types/atom.h
+  types/constant.h
+  types/name.h
+  types/terminal.h
+  types/variable.h
+  unification.h
 )
 
 set(
   SOURCES
-  types/atom.cpp
-  types/terminal.cpp
-  unification.cpp
+  types/atom.cc
+  types/terminal.cc
+  unification.cc
 )
 
-add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} main.cpp)
+add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} main.cc)

@@ -5,19 +5,19 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(
   HEADERS
-  atom.hpp
-  clause.hpp
-  io_join.hpp
-  resolution.hpp
-  resolvent.hpp
+  atom.h
+  clause.h
+  io_join.h
+  resolution.h
+  resolvent.h
 )
 
 set(
   SOURCES
-  atom.cpp
-  clause.cpp
-  resolution.cpp
-  resolvent.cpp
+  atom.cc
+  clause.cc
+  resolution.cc
+  resolvent.cc
 )
 
-add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} main.cpp)
+add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} main.cc)
