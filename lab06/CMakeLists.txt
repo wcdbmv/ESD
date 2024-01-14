@@ -1,0 +1,14 @@
+cmake_minimum_required(VERSION 3.25)
+project(lab06)
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+set(
+  HEADERS
+)
+
+set(
+  SOURCES
+)
+
+add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} main.cc)
