@@ -1,16 +1,19 @@
 #include "unification.h"
 
-#include "types/atom.h"
-#include "types/constant.h"
-#include "types/name.h"
-#include "types/variable.h"
-#include "utils/io_join.h"
-
 #include <algorithm>
+#include <cstddef>
 #include <iostream>
 #include <list>
 #include <set>
+#include <string_view>
 #include <unordered_map>
+
+#include "types/atom.h"
+#include "types/constant.h"
+#include "types/name.h"
+#include "types/terminal.h"
+#include "types/variable.h"
+#include "utils/io_join.h"
 
 namespace {
 
@@ -49,8 +52,10 @@ class Unification {
   }
 
  private:
+  // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members)
   const Atom& atom1_;
   const Atom& atom2_;
+  // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 
   // Таблица подстановок: VariableName -> Constant.
   std::unordered_map<NameSV, const Constant*> variables;

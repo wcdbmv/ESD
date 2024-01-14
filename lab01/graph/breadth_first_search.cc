@@ -1,12 +1,15 @@
-#include <graph/breadth_first_search.h>
+#include "graph/breadth_first_search.h"
 
 #include <algorithm>
+#include <cstddef>
 
-#include <graph/graph.h>
-#include <graph/pattern_search_result.h>
-#include <graph/search_params.h>
-#include <graph/search_result.h>
-#include <utils/convert.h>
+#include "graph/graph.h"
+#include "graph/pattern_search_result.h"
+#include "graph/search_params.h"
+#include "graph/search_result.h"
+#include "types/common.h"
+#include "types/graph.h"
+#include "utils/convert.h"
 
 namespace {
 struct BreadthFirstSearchParams : SearchParams {
@@ -74,7 +77,7 @@ SearchResult breadthFirstSearch(const Graph& graph, Vertex from, Vertex to) {
   }
 
   Vector<Vertex> path{to};
-  do {
+  do {  // NOLINT(cppcoreguidelines-avoid-do-while)
     path.push_back(it->second);
     it = p.back.find(it->second);
   } while (it != p.back.end() && it->first != from);

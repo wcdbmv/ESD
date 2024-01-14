@@ -1,8 +1,9 @@
 #pragma once
 
-#include <atom.h>
-
 #include <iosfwd>
+#include <vector>
+
+#include "atom.h"
 
 class AbsorbedClause;
 

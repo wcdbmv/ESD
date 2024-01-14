@@ -3,7 +3,7 @@
 #include <string_view>
 #include <utility>
 
-#include <clause.h>
+#include "clause.h"
 
 enum class ResolventResult {
   kOk,                    ///< Резольвента сформирована

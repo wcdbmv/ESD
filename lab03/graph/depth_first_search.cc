@@ -1,10 +1,14 @@
-#include <graph/depth_first_search.h>
+#include "graph/depth_first_search.h"
 
+#include <cstddef>
 #include <functional>
 #include <iostream>  // ugly, but teacher's requirement
+#include <string>
 
-#include <graph/graph.h>
-#include <utils/io_utils.h>
+#include "graph/graph.h"
+#include "types/common.h"
+#include "types/graph.h"
+#include "utils/io_utils.h"
 
 namespace {
 
@@ -12,14 +16,21 @@ class Tracing {
  public:
   explicit Tracing(size_t& indent) : indent_{indent} { ++indent; }
 
+  Tracing(const Tracing&) = delete;
+  Tracing(Tracing&&) = delete;
+  Tracing& operator=(const Tracing&) = delete;
+  Tracing& operator=(Tracing&&) = delete;
+
   ~Tracing() noexcept { --indent_; }
 
   template <typename T>
   std::ostream& operator<<(const T& value) {
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay): Wtf.
     return std::cout << std::string(indent_, '\t') << value;
   }
 
  private:
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-member)
   size_t& indent_;
 };
 

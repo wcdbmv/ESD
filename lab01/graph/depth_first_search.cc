@@ -1,12 +1,14 @@
-#include <graph/depth_first_search.h>
+#include "graph/depth_first_search.h"
 
-#include <functional>
+#include <cstddef>
+#include <iterator>
 
-#include <graph/graph.h>
-#include <graph/pattern_search_result.h>
-#include <graph/search_params.h>
-#include <graph/search_result.h>
-#include <utils/convert.h>
+#include "graph/graph.h"
+#include "graph/pattern_search_result.h"
+#include "graph/search_params.h"
+#include "graph/search_result.h"
+#include "types/graph.h"
+#include "utils/convert.h"
 
 namespace {
 

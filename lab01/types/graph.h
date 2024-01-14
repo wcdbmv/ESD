@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include <types/common.h>
+#include "types/common.h"
 
 using Vertex = std::size_t;
 using Vertices = Set<Vertex>;

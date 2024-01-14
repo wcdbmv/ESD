@@ -1,9 +1,15 @@
-#include <resolution.h>
+#include "resolution.h"
 
-#include <io_join.h>
-#include <resolvent.h>
-
+#include <cstddef>
 #include <iostream>
+#include <string_view>
+#include <utility>
+#include <vector>
+
+#include "atom.h"
+#include "clause.h"
+#include "io_join.h"
+#include "resolvent.h"
 
 namespace {
 
@@ -51,6 +57,7 @@ std::string_view ToString(ResolutionResult result) {
   }
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 ResolutionResult FullResolution(const std::vector<Clause>& axioms,
                                 const Clause& inverted_target,
                                 size_t max_iterations) {
@@ -114,6 +121,7 @@ ResolutionResult FullResolution(const std::vector<Clause>& axioms,
   return ResolutionResult::kNoProofFound;
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 ResolutionResult BasicResolution(const std::vector<Clause>& axioms,
                                  const Clause& inverted_target,
                                  size_t max_iterations) {

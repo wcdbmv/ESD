@@ -1,9 +1,9 @@
 #include "types/terminal.h"
 
+#include <ostream>
+
 #include "types/constant.h"
 #include "types/variable.h"
-
-#include <ostream>
 
 const Constant& Terminal::AsConstant() const noexcept {
   return *dynamic_cast<const Constant*>(this);

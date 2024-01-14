@@ -1,8 +1,7 @@
 #pragma once
 
-#include <string>
-
 #include <iosfwd>
+#include <string>
 
 struct Atom {
   std::string name;

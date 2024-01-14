@@ -1,11 +1,18 @@
 #include "graph.h"
 
+#include <cstddef>
+#include <filesystem>
 #include <fstream>
+#include <istream>
+#include <ostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
-#include <utils/io_utils.h>
+#include "types/common.h"
+#include "types/graph.h"
+#include "utils/io_utils.h"
 
 HyperGraph::HyperGraph(Vertices vertices, Edges edges)
     : vertices_{std::move(vertices)}, edges_{std::move(edges)} {
@@ -33,13 +40,13 @@ void HyperGraph::checkVertex_(const Vertex& v) const {
 }
 
 std::istream& operator>>(std::istream& is, HyperGraph& graph) {
-  size_t n;
+  size_t n = 0;
   is >> n;
 
   Vertices vertices;
 
   for (size_t i = 0; i < n; ++i) {
-    Vertex v;
+    Vertex v{};
     is >> v;
     vertices.insert(v);
   }
@@ -49,13 +56,13 @@ std::istream& operator>>(std::istream& is, HyperGraph& graph) {
   Edges edges;
 
   for (size_t i = 0; i < n; ++i) {
-    std::size_t id;
+    std::size_t id = 0;
     is >> id;
 
     std::string symbol;
     is >> symbol;  // ","
 
-    Vertex from;
+    Vertex from{};
     is >> from;
 
     is >> symbol;  // "->"
@@ -64,7 +71,7 @@ std::istream& operator>>(std::istream& is, HyperGraph& graph) {
     std::getline(is, line);
     std::stringstream ss{line};
 
-    Vertex to;
+    Vertex to{};
     Vertices tos;
     while (ss >> to) {
       tos.insert(to);

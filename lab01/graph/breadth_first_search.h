@@ -1,6 +1,6 @@
 #pragma once
 
-#include <types/graph.h>
+#include "types/graph.h"
 
 class Graph;
 struct SearchResult;

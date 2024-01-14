@@ -1,8 +1,9 @@
 #include <iostream>
 
-#include <graph/breadth_first_search.h>
-#include <graph/graph.h>
-#include <utils/io_utils.h>
+#include "graph/breadth_first_search.h"
+#include "graph/graph.h"
+#include "types/graph.h"
+#include "utils/io_utils.h"
 
 int main() {
   const auto graph = HyperGraph::readFromFile("../tests/graph1.txt");

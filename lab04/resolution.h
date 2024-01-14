@@ -3,7 +3,7 @@
 #include <utility>
 #include <vector>
 
-#include <clause.h>
+#include "clause.h"
 
 enum class ResolutionResult {
   kProvenByFoundingEmptyClause,

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "types/name.h"
-
 #include <iosfwd>
+
+#include "types/name.h"
 
 struct Constant;
 struct Variable;

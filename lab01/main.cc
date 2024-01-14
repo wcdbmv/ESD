@@ -1,10 +1,10 @@
 #include <iostream>
 
-#include <graph/breadth_first_search.h>
-#include <graph/depth_first_search.h>
-#include <graph/graph.h>
-#include <graph/search_result.h>
-#include <utils/io_utils.h>
+#include "graph/breadth_first_search.h"
+#include "graph/depth_first_search.h"
+#include "graph/graph.h"
+#include "graph/search_result.h"
+#include "utils/io_utils.h"
 
 /**
  * Поиск в глубину и в ширину в пространстве состояний.
@@ -26,7 +26,7 @@ int main() {
         std::cout << "\n";
         std::cout << "\tПоиском в ширину:  ";
         join(bfs.path, std::cout, " -> ");
-        std::cout << std::endl;
+        std::cout << '\n';
       }
     }
   }

@@ -9,6 +9,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(cmake/CompileOptions.cmake)
 
+set(CMAKE_CXX_CLANG_TIDY clang-tidy -warnings-as-errors=*)
+
 add_subdirectory(lab01)
 add_subdirectory(lab02)
 add_subdirectory(lab03)

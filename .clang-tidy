@@ -1,0 +1,21 @@
+Checks: "-*,\
+clang-analyzer-*,\
+bugprone-*,\
+-bugprone-easily-swappable-parameters,\
+cert-*,\
+cppcoreguidelines-*,\
+-cppcoreguidelines-avoid-magic-numbers,\
+-cppcoreguidelines-non-private-member-variables-in-classes,\
+-cppcoreguidelines-special-member-functions,\
+google-*,\
+hicpp-*,\
+-hicpp-no-array-decay,\
+misc-*,\
+-misc-non-private-member-variables-in-classes,\
+modernize-*,\
+-modernize-use-trailing-return-type,\
+performance-*,\
+portability-*,\
+readability-*,\
+-readability-identifier-length,\
+"

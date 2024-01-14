@@ -1,8 +1,11 @@
-#include <graph/breadth_first_search.h>
+#include "graph/breadth_first_search.h"
 
 #include <algorithm>
+#include <cstddef>
 
-#include <graph/graph.h>
+#include "graph/graph.h"
+#include "types/common.h"
+#include "types/graph.h"
 
 SearchResult breadthFirstSearch(const HyperGraph& graph,
                                 const Vertices& from,

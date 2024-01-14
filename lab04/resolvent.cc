@@ -1,4 +1,10 @@
-#include <resolvent.h>
+#include "resolvent.h"
+
+#include <string>
+#include <unordered_map>
+#include <utility>
+
+#include "clause.h"
 
 namespace {
 

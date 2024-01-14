@@ -1,10 +1,16 @@
 #include "graph.h"
 
+#include <cstddef>
+#include <filesystem>
 #include <fstream>
+#include <istream>
+#include <ostream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
-#include <utils/io_utils.h>
+#include "types/graph.h"
+#include "utils/io_utils.h"
 
 Graph::Graph(Vertices vertices, Edges edges)
     : vertices_{std::move(vertices)}, edges_{std::move(edges)} {
@@ -22,13 +28,13 @@ void Graph::checkVertex_(const Vertex& v) const {
 }
 
 std::istream& operator>>(std::istream& is, Graph& graph) {
-  size_t n;
+  size_t n = 0;
   is >> n;
 
   Vertices vertices;
 
   for (size_t i = 0; i < n; ++i) {
-    Vertex v;
+    Vertex v{};
     is >> v;
     vertices.insert(v);
   }
@@ -38,13 +44,13 @@ std::istream& operator>>(std::istream& is, Graph& graph) {
   Edges edges;
 
   for (size_t i = 0; i < n; ++i) {
-    Vertex from;
+    Vertex from{};
     is >> from;
 
     std::string symbol;  // "->";
     is >> symbol;
 
-    Vertex to;
+    Vertex to{};
     is >> to;
 
     edges.emplace_back(from, to);
