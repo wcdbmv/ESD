@@ -2,8 +2,7 @@
 
 #include <types/graph.hpp>
 
-
 struct SearchResult {
-	Vector<Vertex> path;
-	Vector<Vertex> closed_vertices;
+  Vector<Vertex> path;
+  Vector<Vertex> closed_vertices;
 };

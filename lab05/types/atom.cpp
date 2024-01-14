@@ -5,7 +5,7 @@
 #include <ostream>
 
 std::ostream& operator<<(std::ostream& os, const Atom& atom) {
-	os << atom.name << '(';
-	join(atom.terminals, os);
-	return os << ')';
+  os << atom.name << '(';
+  join(atom.terminals, os);
+  return os << ')';
 }

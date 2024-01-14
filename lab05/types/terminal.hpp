@@ -8,18 +8,17 @@ struct Constant;
 struct Variable;
 
 struct Terminal {
-	Name name;
+  Name name;
 
-	explicit Terminal(std::string_view name)
-		: name(name.begin(), name.end()) {}
+  explicit Terminal(std::string_view name) : name(name.begin(), name.end()) {}
 
-	virtual ~Terminal() = default;
+  virtual ~Terminal() = default;
 
-	[[nodiscard]] virtual bool IsConstant() const noexcept = 0;
-	[[nodiscard]] bool IsVariable() const noexcept { return !IsConstant(); }
+  [[nodiscard]] virtual bool IsConstant() const noexcept = 0;
+  [[nodiscard]] bool IsVariable() const noexcept { return !IsConstant(); }
 
-	[[nodiscard]] const Constant& AsConstant() const noexcept;
-	[[nodiscard]] const Variable& AsVariable() const noexcept;
+  [[nodiscard]] const Constant& AsConstant() const noexcept;
+  [[nodiscard]] const Variable& AsVariable() const noexcept;
 };
 
 using TerminalPtr = Terminal*;

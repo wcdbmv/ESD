@@ -6,7 +6,6 @@
 #include <utility>
 #include <vector>
 
-
 template <typename T>
 using List = std::list<T>;
 

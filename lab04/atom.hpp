@@ -5,8 +5,8 @@
 #include <iosfwd>
 
 struct Atom {
-	std::string name;
-	bool sign;
+  std::string name;
+  bool sign;
 };
 
 Atom Negate(const Atom& atom);

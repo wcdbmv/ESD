@@ -7,10 +7,10 @@
 #include <vector>
 
 struct Atom {
-	Name name;
+  Name name;
 
-	using Terminals = std::vector<TerminalCPtr>;
-	Terminals terminals;
+  using Terminals = std::vector<TerminalCPtr>;
+  Terminals terminals;
 };
 
 std::ostream& operator<<(std::ostream& os, const Atom& atom);

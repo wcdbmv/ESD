@@ -4,7 +4,6 @@
 
 #include <types/common.hpp>
 
-
 using Vertex = std::size_t;
 using Vertices = Set<Vertex>;
 

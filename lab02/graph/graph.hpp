@@ -1,28 +1,26 @@
 #pragma once
 
 #include <filesystem>
-#include <istream>
-#include <ostream>
+#include <iosfwd>
 
 #include <types/graph.hpp>
 
-
 class HyperGraph {
-public:
-	explicit HyperGraph(Vertices vertices = {}, Edges edges = {});
+ public:
+  explicit HyperGraph(Vertices vertices = {}, Edges edges = {});
 
-	[[nodiscard]] const auto& vertices() const { return vertices_; }
-	[[nodiscard]] const auto& edges() const { return edges_; }
+  [[nodiscard]] const auto& vertices() const { return vertices_; }
+  [[nodiscard]] const auto& edges() const { return edges_; }
 
-	friend std::istream& operator>>(std::istream& is, HyperGraph& graph);
-	friend std::ostream& operator<<(std::ostream& os, const HyperGraph& graph);
+  friend std::istream& operator>>(std::istream& is, HyperGraph& graph);
+  friend std::ostream& operator<<(std::ostream& os, const HyperGraph& graph);
 
-	static HyperGraph readFromFile(const std::filesystem::path& path);
-	void writeToFile(const std::filesystem::path& path) const;
+  static HyperGraph readFromFile(const std::filesystem::path& path);
+  void writeToFile(const std::filesystem::path& path) const;
 
-private:
-	Vertices vertices_;
-	Edges edges_;
+ private:
+  Vertices vertices_;
+  Edges edges_;
 
-	void checkVertex_(const Vertex& v) const;
+  void checkVertex_(const Vertex& v) const;
 };

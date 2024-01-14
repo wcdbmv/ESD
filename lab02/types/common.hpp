@@ -4,7 +4,6 @@
 #include <unordered_set>
 #include <vector>
 
-
 template <typename T>
 using Set = std::set<T>;
 
