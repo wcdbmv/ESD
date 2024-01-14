@@ -21,7 +21,7 @@ class Atom {  // Predicate
 
   [[nodiscard]] friend bool operator==(const Atom&, const Atom&) = default;
 
-  friend std::ostream& operator<<(std::ostream& os, const Atom&);
+  friend std::ostream& operator<<(std::ostream&, const Atom&);
 
  private:
   std::string name_;

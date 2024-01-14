@@ -5,43 +5,22 @@
 #include <initializer_list>
 #include <iostream>
 #include <map>
-#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "types/atom.h"
+#include "types/clause.h"
 #include "types/terminal.h"
 
-struct Disjunct {
-  std::vector<Atom> atoms;
-  Disjunct() = default;
-  Disjunct(std::initializer_list<Atom> list) : atoms(list) {}
-
-  bool operator==(Disjunct const& oth) const = default;
-
-  [[nodiscard]] std::string to_str() const {
-    if (atoms.empty()) {
-      return "<empty>";
-    }
-    std::ostringstream oss;
-    bool first = true;
-    for (Atom const& a : atoms) {
-      oss << (first ? "" : " | ") << a;
-      first = false;
-    }
-    return oss.str();
-  }
-};
-
 struct Formula {
-  std::vector<Disjunct> items;
-  Formula(std::initializer_list<Disjunct> list) : items(list) {}
+  std::vector<Clause> items;
+  Formula(std::initializer_list<Clause> list) : items(list) {}
 };
 
 class ResolutionSolver {
  private:
-  std::vector<Disjunct> disjuncts;
+  std::vector<Clause> disjuncts;
   bool final_result = false;
 
   // Заменить все вхождения переменной old_v на переменную или константу nev_v
@@ -50,8 +29,8 @@ class ResolutionSolver {
                         bool make_const) {
     std::cout << "  Замена: " << old_v << " -> " << new_v
               << (make_const ? " const" : "") << '\n';
-    for (Disjunct& d : disjuncts) {
-      for (Atom& atom : d.atoms) {
+    for (Clause& d : disjuncts) {
+      for (Atom& atom : d.atoms()) {
         for (Terminal& term : atom.terminals()) {
           if (term.name() == old_v) {
             assert(!term.IsConstant());
@@ -66,35 +45,35 @@ class ResolutionSolver {
   }
 
   // Сформировать дизъюнк из base путём исключения атома с индексом out_idx
-  std::pair<Disjunct, bool> get_new_disjunct(Disjunct& base, size_t out_idx) {
-    Disjunct new_disjunct;
-    for (size_t j = 0; j < base.atoms.size(); j++) {
+  std::pair<Clause, bool> get_new_disjunct(Clause& base, size_t out_idx) {
+    Clause new_disjunct;
+    for (size_t j = 0; j < base.atoms().size(); j++) {
       if (j != out_idx) {
-        new_disjunct.atoms.push_back(base.atoms[j]);
+        new_disjunct.atoms().push_back(base.atoms()[j]);
       }
     }
 
     const auto present =
         std::any_of(disjuncts.begin(), disjuncts.end(),
-                    [&](Disjunct const& d) { return new_disjunct == d; });
+                    [&](Clause const& d) { return new_disjunct == d; });
 
     return {new_disjunct, present};
   }
 
   // Есть ли заданный дизъюнкт в списке
-  bool new_disjunct_present(Disjunct& base, size_t out_idx) {
+  bool new_disjunct_present(Clause& base, size_t out_idx) {
     return get_new_disjunct(base, out_idx).second;
   }
 
   // Добавить дизъюнкт в список
-  bool add_new_disjunct(Disjunct& base, size_t out_idx) {
+  bool add_new_disjunct(Clause& base, size_t out_idx) {
     auto [disj, present] = get_new_disjunct(base, out_idx);
     if (present) {
       return false;
     }
 
-    std::cout << "  " << disj.to_str() << '\n';
-    if (disj.atoms.empty()) {
+    std::cout << "  " << disj << '\n';
+    if (disj.atoms().empty()) {
       final_result = true;
     }
 
@@ -195,11 +174,11 @@ class ResolutionSolver {
 
   // Проверка пары дизъюнктов на наличие контрактной пары, и возможная
   // унификация
-  bool check_disjuncts(Disjunct& d1, Disjunct& d2) {
-    for (size_t i1 = 0; i1 < d1.atoms.size(); i1++) {
-      for (size_t i2 = 0; i2 < d2.atoms.size(); i2++) {
-        Atom& atom1 = d1.atoms[i1];
-        Atom& atom2 = d2.atoms[i2];
+  bool check_disjuncts(Clause& d1, Clause& d2) {
+    for (size_t i1 = 0; i1 < d1.atoms().size(); i1++) {
+      for (size_t i2 = 0; i2 < d2.atoms().size(); i2++) {
+        Atom& atom1 = d1.atoms()[i1];
+        Atom& atom2 = d2.atoms()[i2];
 
         if (atom1.name() != atom2.name() ||
             atom1.is_negative() == atom2.is_negative()) {
@@ -227,8 +206,8 @@ class ResolutionSolver {
 
   void print_disjuncts() {
     std::cout << "Дизъюнкты:\n";
-    for (Disjunct const& d : disjuncts) {
-      std::cout << "  " << d.to_str() << "\n";
+    for (Clause const& d : disjuncts) {
+      std::cout << "  " << d << "\n";
     }
     std::cout << "=======================================" << '\n';
   }
@@ -237,11 +216,11 @@ class ResolutionSolver {
   ResolutionSolver(std::vector<Formula> const& formulas,
                    Formula const& neg_target) {
     for (Formula const& f : formulas) {
-      for (Disjunct const& d : f.items) {
+      for (Clause const& d : f.items) {
         disjuncts.push_back(d);
       }
     }
-    for (Disjunct const& d : neg_target.items) {
+    for (Clause const& d : neg_target.items) {
       disjuncts.push_back(d);
     }
   }
@@ -253,8 +232,8 @@ class ResolutionSolver {
     while (iter_changed) {
       iter_changed = false;
 
-      for (Disjunct& d1 : disjuncts) {
-        for (Disjunct& d2 : disjuncts) {
+      for (Clause& d1 : disjuncts) {
+        for (Clause& d2 : disjuncts) {
           if (&d1 == &d2) {
             continue;
           }
@@ -291,12 +270,12 @@ int main() {
     // P2(x1, y1) | P5(w1) | !P6(z1)
     // P3(C) | !P4(z1) | P1(x1, y1, z1)
     const Formula f2_1{
-        Disjunct{
+        Clause{
             Atom{"P2", {Terminal::Variable("x1"), Terminal::Variable("y1")}},
             Atom{"P5", {Terminal::Variable("w1")}},
             Atom{"P6", {Terminal::Variable("z1")}, kNegative},
         },
-        Disjunct{
+        Clause{
             Atom{"P3", {Terminal::Constant("C")}},
             Atom{"P4", {Terminal::Variable("z1")}, kNegative},
             Atom{"P1",
@@ -308,14 +287,14 @@ int main() {
     // !P2(A, B) | P5(w2) | P6(x2)
     // P4(z2) | !P3(x2)
     const Formula f2_2{
-        Disjunct{
+        Clause{
             Atom{"P2",
                  {Terminal::Constant("A"), Terminal::Constant("B")},
                  kNegative},
             Atom { "P5", { Terminal::Variable("w2") } },
         Atom { "P6", { Terminal::Variable("z2") } },
     },
-    Disjunct {
+    Clause {
       Atom { "P4", { Terminal::Variable("z2") } },
       Atom { "P3", { Terminal::Variable("z2") }, kNegative },
       },
@@ -323,7 +302,7 @@ int main() {
 
     // _ !P1(A, B, C)
     const Formula neg_target {
-      Disjunct {
+      Clause {
         Atom { "P1", { Terminal::Constant("A"), Terminal::Constant("B"), Terminal::Constant("C") }, kNegative },
       },
     };

@@ -19,7 +19,7 @@ class Terminal {
   [[nodiscard]] friend bool operator==(const Terminal&,
                                        const Terminal&) = default;
 
-  friend std::ostream& operator<<(std::ostream& os, const Terminal& terminal);
+  friend std::ostream& operator<<(std::ostream&, const Terminal&);
 
  private:
   enum class Type : std::uint8_t {
