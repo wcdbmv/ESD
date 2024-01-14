@@ -5,10 +5,12 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(
   HEADERS
+  types/terminal.h
 )
 
 set(
   SOURCES
+  types/terminal.cc
 )
 
 add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} main.cc)

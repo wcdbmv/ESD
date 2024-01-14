@@ -9,29 +9,20 @@
 #include <utility>
 #include <vector>
 
-struct Term {
-  std::string name;
-  bool is_const;
-
-  static Term const_(std::string name) { return {std::move(name), true}; }
-  static Term var(std::string name) { return {std::move(name), false}; }
-
-  bool operator==(Term const& oth) const = default;
-  [[nodiscard]] std::string to_str() const { return name; }
-};
+#include "types/terminal.h"
 
 struct Atom {  // Predicate
   std::string name;
   bool negative;
-  std::vector<Term> args;
+  std::vector<Terminal> args;
 
   bool operator==(Atom const& oth) const = default;
 
   [[nodiscard]] std::string to_str() const {
     std::string res = (negative ? "!" : "") + name + "(";
     bool first = true;
-    for (Term const& t : args) {
-      res += (first ? "" : ", ") + t.to_str();
+    for (Terminal const& t : args) {
+      res += (first ? "" : ", ") + std::string{t.name()};
       first = false;
     }
     return res + ")";
@@ -77,12 +68,12 @@ class ResolutionSolver {
               << (make_const ? " const" : "") << '\n';
     for (Disjunct& d : disjuncts) {
       for (Atom& atom : d.atoms) {
-        for (Term& term : atom.args) {
-          if (term.name == old_v) {
-            assert(!term.is_const);
-            term.name = new_v;
+        for (Terminal& term : atom.args) {
+          if (term.name() == old_v) {
+            assert(!term.IsConstant());
+            term.set_name(new_v);
             if (make_const) {
-              term.is_const = true;
+              term.MakeConstant();
             }
           }
         }
@@ -140,22 +131,22 @@ class ResolutionSolver {
 
     // Сопоставление аргументов предикатов
     for (size_t i = 0; i < a1.args.size(); i++) {
-      Term const* arg1 = &a1.args[i];
-      Term const* arg2 = &a2.args[i];
+      Terminal const* arg1 = &a1.args[i];
+      Terminal const* arg2 = &a2.args[i];
 
-      if (arg1->is_const && arg2->is_const) {  // Обе константы
-        if (arg1->name != arg2->name) {
+      if (arg1->IsConstant() && arg2->IsConstant()) {  // Обе константы
+        if (arg1->name() != arg2->name()) {
           return false;
         }
-      } else if (!arg1->is_const && !arg2->is_const) {  // Обе переменные
-        if (arg1->name != arg2->name) {
-          linked_vars.emplace_back(arg1->name, arg2->name);
+      } else if (arg1->IsVariable() && arg2->IsVariable()) {  // Обе переменные
+        if (arg1->name() != arg2->name()) {
+          linked_vars.emplace_back(arg1->name(), arg2->name());
         }
       } else {  // Константа и переменная
-        if (arg1->is_const) {
+        if (arg1->IsConstant()) {
           std::swap(arg1, arg2);  // arg1 - var, arg2 - const
         }
-        consts_mappings.emplace_back(arg1->name, arg2->name);
+        consts_mappings.emplace_back(arg1->name(), arg2->name());
       }
     }
 
@@ -318,15 +309,15 @@ int main() {
     // P3(C) | !P4(z1) | P1(x1, y1, z1)
     const Formula f2_1{
         Disjunct{
-            Atom{"P2", POS, {Term::var("x1"), Term::var("y1")}},
-            Atom{"P5", POS, {Term::var("w1")}},
-            Atom{"P6", NEG, {Term::var("z1")}},
+            Atom{"P2", POS, {Terminal::Variable("x1"), Terminal::Variable("y1")}},
+            Atom{"P5", POS, {Terminal::Variable("w1")}},
+            Atom{"P6", NEG, {Terminal::Variable("z1")}},
         },
         Disjunct{
-            Atom{"P3", POS, {Term::const_("C")}},
-            Atom{"P4", NEG, {Term::var("z1")}},
+            Atom{"P3", POS, {Terminal::Constant("C")}},
+            Atom{"P4", NEG, {Terminal::Variable("z1")}},
             Atom{
-                "P1", POS, {Term::var("x1"), Term::var("y1"), Term::var("z1")}},
+                "P1", POS, {Terminal::Variable("x1"), Terminal::Variable("y1"), Terminal::Variable("z1")}},
         },
     };
 
@@ -334,20 +325,20 @@ int main() {
     // P4(z2) | !P3(x2)
     const Formula f2_2{
         Disjunct{
-            Atom{"P2", NEG, {Term::const_("A"), Term::const_("B") } },
-        Atom { "P5", POS, { Term::var("w2") } },
-        Atom { "P6", POS, { Term::var("z2") } },
+            Atom{"P2", NEG, {Terminal::Constant("A"), Terminal::Constant("B") } },
+        Atom { "P5", POS, { Terminal::Variable("w2") } },
+        Atom { "P6", POS, { Terminal::Variable("z2") } },
     },
     Disjunct {
-      Atom { "P4", POS, { Term::var("z2") } },
-      Atom { "P3", NEG, { Term::var("z2") } },
+      Atom { "P4", POS, { Terminal::Variable("z2") } },
+      Atom { "P3", NEG, { Terminal::Variable("z2") } },
       },
     };
 
     // _ !P1(A, B, C)
     const Formula neg_target {
       Disjunct {
-        Atom { "P1", NEG, { Term::const_("A"), Term::const_("B"), Term::const_("C") } },
+        Atom { "P1", NEG, { Terminal::Constant("A"), Terminal::Constant("B"), Terminal::Constant("C") } },
       },
     };
 

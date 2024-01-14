@@ -1,3 +1,5 @@
+CheckOptions:
+  cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor: true
 Checks: "-*,\
 clang-analyzer-*,\
 bugprone-*,\
@@ -12,6 +14,7 @@ google-*,\
 hicpp-*,\
 -hicpp-braces-around-statements,\
 -hicpp-no-array-decay,\
+-hicpp-special-member-functions,\
 misc-*,\
 -misc-non-private-member-variables-in-classes,\
 modernize-*,\
