@@ -5,29 +5,13 @@
 #include <initializer_list>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "types/atom.h"
 #include "types/terminal.h"
-
-struct Atom {  // Predicate
-  std::string name;
-  bool negative;
-  std::vector<Terminal> args;
-
-  bool operator==(Atom const& oth) const = default;
-
-  [[nodiscard]] std::string to_str() const {
-    std::string res = (negative ? "!" : "") + name + "(";
-    bool first = true;
-    for (Terminal const& t : args) {
-      res += (first ? "" : ", ") + std::string{t.name()};
-      first = false;
-    }
-    return res + ")";
-  }
-};
 
 struct Disjunct {
   std::vector<Atom> atoms;
@@ -40,13 +24,13 @@ struct Disjunct {
     if (atoms.empty()) {
       return "<empty>";
     }
-    std::string res;
+    std::ostringstream oss;
     bool first = true;
     for (Atom const& a : atoms) {
-      res += (first ? "" : " | ") + a.to_str();
+      oss << (first ? "" : " | ") << a;
       first = false;
     }
-    return res;
+    return oss.str();
   }
 };
 
@@ -68,7 +52,7 @@ class ResolutionSolver {
               << (make_const ? " const" : "") << '\n';
     for (Disjunct& d : disjuncts) {
       for (Atom& atom : d.atoms) {
-        for (Terminal& term : atom.args) {
+        for (Terminal& term : atom.terminals()) {
           if (term.name() == old_v) {
             assert(!term.IsConstant());
             term.set_name(new_v);
@@ -121,18 +105,18 @@ class ResolutionSolver {
   // Попытаться унифицировать 2 атома, возвращает true, если унифицировано
   // NOLINTNEXTLINE(readability-function-cognitive-complexity)
   bool unify_atoms(Atom& a1, Atom& a2) {
-    assert(a1.name == a2.name);
-    assert(a1.args.size() == a2.args.size());
-    assert(a1.negative != a2.negative);
+    assert(a1.name() == a2.name());
+    assert(a1.terminals().size() == a2.terminals().size());
+    assert(a1.is_negative() != a2.is_negative());
 
     // Предварительные списки замен
     std::vector<std::pair<std::string, std::string>> consts_mappings;
     std::vector<std::pair<std::string, std::string>> linked_vars;
 
     // Сопоставление аргументов предикатов
-    for (size_t i = 0; i < a1.args.size(); i++) {
-      Terminal const* arg1 = &a1.args[i];
-      Terminal const* arg2 = &a2.args[i];
+    for (size_t i = 0; i < a1.terminals().size(); i++) {
+      Terminal const* arg1 = &a1.terminals()[i];
+      Terminal const* arg2 = &a2.terminals()[i];
 
       if (arg1->IsConstant() && arg2->IsConstant()) {  // Обе константы
         if (arg1->name() != arg2->name()) {
@@ -217,15 +201,15 @@ class ResolutionSolver {
         Atom& atom1 = d1.atoms[i1];
         Atom& atom2 = d2.atoms[i2];
 
-        if (atom1.name != atom2.name || atom1.negative == atom2.negative) {
+        if (atom1.name() != atom2.name() ||
+            atom1.is_negative() == atom2.is_negative()) {
           continue;
         }
         if (new_disjunct_present(d1, i1) && new_disjunct_present(d2, i2)) {
           continue;
         }
 
-        std::cout << "Унификация: " << atom1.to_str() << " И " << atom2.to_str()
-                  << '\n';
+        std::cout << "Унификация: " << atom1 << " И " << atom2 << '\n';
         const bool unified = unify_atoms(atom1, atom2);
         if (!unified) {
           std::cout << "  Невозможна" << '\n';
@@ -300,24 +284,24 @@ class ResolutionSolver {
   }
 };
 
-static const bool NEG = true;
-static const bool POS = false;
-
 int main() {
   try {
+    constexpr auto kNegative = true;
+
     // P2(x1, y1) | P5(w1) | !P6(z1)
     // P3(C) | !P4(z1) | P1(x1, y1, z1)
     const Formula f2_1{
         Disjunct{
-            Atom{"P2", POS, {Terminal::Variable("x1"), Terminal::Variable("y1")}},
-            Atom{"P5", POS, {Terminal::Variable("w1")}},
-            Atom{"P6", NEG, {Terminal::Variable("z1")}},
+            Atom{"P2", {Terminal::Variable("x1"), Terminal::Variable("y1")}},
+            Atom{"P5", {Terminal::Variable("w1")}},
+            Atom{"P6", {Terminal::Variable("z1")}, kNegative},
         },
         Disjunct{
-            Atom{"P3", POS, {Terminal::Constant("C")}},
-            Atom{"P4", NEG, {Terminal::Variable("z1")}},
-            Atom{
-                "P1", POS, {Terminal::Variable("x1"), Terminal::Variable("y1"), Terminal::Variable("z1")}},
+            Atom{"P3", {Terminal::Constant("C")}},
+            Atom{"P4", {Terminal::Variable("z1")}, kNegative},
+            Atom{"P1",
+                 {Terminal::Variable("x1"), Terminal::Variable("y1"),
+                  Terminal::Variable("z1")}},
         },
     };
 
@@ -325,20 +309,22 @@ int main() {
     // P4(z2) | !P3(x2)
     const Formula f2_2{
         Disjunct{
-            Atom{"P2", NEG, {Terminal::Constant("A"), Terminal::Constant("B") } },
-        Atom { "P5", POS, { Terminal::Variable("w2") } },
-        Atom { "P6", POS, { Terminal::Variable("z2") } },
+            Atom{"P2",
+                 {Terminal::Constant("A"), Terminal::Constant("B")},
+                 kNegative},
+            Atom { "P5", { Terminal::Variable("w2") } },
+        Atom { "P6", { Terminal::Variable("z2") } },
     },
     Disjunct {
-      Atom { "P4", POS, { Terminal::Variable("z2") } },
-      Atom { "P3", NEG, { Terminal::Variable("z2") } },
+      Atom { "P4", { Terminal::Variable("z2") } },
+      Atom { "P3", { Terminal::Variable("z2") }, kNegative },
       },
     };
 
     // _ !P1(A, B, C)
     const Formula neg_target {
       Disjunct {
-        Atom { "P1", NEG, { Terminal::Constant("A"), Terminal::Constant("B"), Terminal::Constant("C") } },
+        Atom { "P1", { Terminal::Constant("A"), Terminal::Constant("B"), Terminal::Constant("C") }, kNegative },
       },
     };
 

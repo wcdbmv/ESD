@@ -5,11 +5,13 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(
   HEADERS
+  types/atom.h
   types/terminal.h
 )
 
 set(
   SOURCES
+  types/atom.cc
   types/terminal.cc
 )
 
