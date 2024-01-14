@@ -16,7 +16,6 @@
 class ResolutionSolver {
  private:
   std::vector<Clause> disjuncts;
-  bool final_result = false;
 
   // Заменить все вхождения переменной old_v на переменную или константу nev_v
   void substitute_terms(const std::string& old_v,
@@ -61,7 +60,7 @@ class ResolutionSolver {
   }
 
   // Добавить дизъюнкт в список
-  bool add_new_disjunct(Clause& base, size_t out_idx) {
+  bool add_new_disjunct(Clause& base, size_t out_idx, bool& is_final_result) {
     auto [disj, present] = get_new_disjunct(base, out_idx);
     if (present) {
       return false;
@@ -69,7 +68,7 @@ class ResolutionSolver {
 
     std::cout << "  " << disj << '\n';
     if (disj.atoms().empty()) {
-      final_result = true;
+      is_final_result = true;
     }
 
     disjuncts.push_back(disj);
@@ -169,7 +168,7 @@ class ResolutionSolver {
 
   // Проверка пары дизъюнктов на наличие контрактной пары, и возможная
   // унификация
-  bool check_disjuncts(Clause& d1, Clause& d2) {
+  bool check_disjuncts(Clause& d1, Clause& d2, bool& is_final_result) {
     for (size_t i1 = 0; i1 < d1.atoms().size(); i1++) {
       for (size_t i2 = 0; i2 < d2.atoms().size(); i2++) {
         Atom& atom1 = d1.atoms()[i1];
@@ -191,8 +190,8 @@ class ResolutionSolver {
         }
 
         std::cout << "Новые:\n";
-        add_new_disjunct(d1, i1);
-        add_new_disjunct(d2, i2);
+        add_new_disjunct(d1, i1, is_final_result);
+        add_new_disjunct(d2, i2, is_final_result);
         return true;
       }
     }
@@ -221,11 +220,11 @@ class ResolutionSolver {
   }
 
   void solve() {
-    print_disjuncts();
-
-    auto iter_changed = true;
-    while (iter_changed) {
-      iter_changed = false;
+    auto is_final_result = false;
+    auto is_iter_changed = true;
+    while (is_iter_changed) {
+      print_disjuncts();
+      is_iter_changed = false;
 
       for (Clause& d1 : disjuncts) {
         for (Clause& d2 : disjuncts) {
@@ -233,24 +232,25 @@ class ResolutionSolver {
             continue;
           }
 
-          const bool match = check_disjuncts(d1, d2);
+          const bool match = check_disjuncts(d1, d2, is_final_result);
           if (match) {
-            iter_changed = true;
+            is_iter_changed = true;
             break;
           }
         }
-        if (iter_changed) {
+        if (is_iter_changed) {
           break;
         }
       }
 
-      print_disjuncts();
-      if (final_result) {
+      if (is_final_result) {
         break;
       }
     }
 
-    if (final_result) {
+    print_disjuncts();
+
+    if (is_iter_changed) {
       std::cout << "Доказано" << '\n';
     } else {
       std::cout << "He доказано" << '\n';
