@@ -8,7 +8,9 @@ cppcoreguidelines-*,\
 -cppcoreguidelines-non-private-member-variables-in-classes,\
 -cppcoreguidelines-special-member-functions,\
 google-*,\
+-google-readability-braces-around-statements,\
 hicpp-*,\
+-hicpp-braces-around-statements,\
 -hicpp-no-array-decay,\
 misc-*,\
 -misc-non-private-member-variables-in-classes,\
