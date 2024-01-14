@@ -15,54 +15,66 @@
 
 class ResolutionSolver {
  private:
-  std::vector<Clause> clauses;
+  std::vector<Clause> clauses_;
 
-  // Заменить все вхождения переменной old_v на переменную или константу nev_v
-  void SubstituteTerminals(const std::string& old_v,
-                           const std::string& new_v,
-                           bool make_const) {
-    std::cout << "  Замена: " << old_v << " -> " << new_v
-              << (make_const ? " const" : "") << '\n';
-    for (Clause& d : clauses) {
-      for (Atom& atom : d.atoms()) {
-        for (Terminal& term : atom.terminals()) {
-          if (term.name() == old_v) {
-            assert(!term.IsConstant());
-            term.set_name(new_v);
-            if (make_const) {
-              term.MakeConstant();
-            }
+  /// Заменить все вхождения переменной old на переменную или константу new.
+  void SubstituteTerminals(const std::string& old_name,
+                           const std::string& new_name,
+                           const bool do_make_const) {
+    std::cout << "  Замена: " << old_name << " -> " << new_name
+              << (do_make_const ? " const" : "") << '\n';
+    for (auto& clause : clauses_) {
+      for (auto& atom : clause.atoms()) {
+        for (auto& terminal : atom.terminals()) {
+          if (terminal.name() != old_name) {
+            continue;
+          }
+
+          assert(!terminal.IsConstant());
+          terminal.set_name(new_name);
+          if (do_make_const) {
+            terminal.MakeConstant();
           }
         }
       }
     }
   }
 
-  // Сформировать дизъюнк из base путём исключения атома с индексом out_idx
-  std::pair<Clause, bool> GetNewClause(Clause& base, size_t out_idx) {
+  /// Сформировать дизъюнк из base путём исключения атома с индексом i_without.
+  std::pair<Clause, bool> GetNewClause(const Clause& base,
+                                       const size_t i_without) {
+    const auto& base_atoms = base.atoms();
+    assert(!base_atoms.empty());
+    assert(base_atoms.size() > i_without);
+
     Clause new_clause;
-    for (size_t j = 0; j < base.atoms().size(); j++) {
-      if (j != out_idx) {
-        new_clause.atoms().push_back(base.atoms()[j]);
+    auto& new_atoms = new_clause.atoms();
+    new_atoms.reserve(base_atoms.size() - 1);
+
+    for (size_t i = 0; i < base_atoms.size(); ++i) {
+      if (i != i_without) {
+        new_atoms.push_back(base_atoms[i]);
       }
     }
 
-    const auto present =
-        std::any_of(clauses.begin(), clauses.end(),
-                    [&](Clause const& d) { return new_clause == d; });
+    const auto is_present = std::ranges::any_of(
+        clauses_,
+        [&new_clause](const Clause& clause) { return clause == new_clause; });
 
-    return {new_clause, present};
+    return {std::move(new_clause), is_present};
   }
 
-  // Есть ли заданный дизъюнкт в списке
-  bool NewClausePresent(Clause& base, size_t out_idx) {
-    return GetNewClause(base, out_idx).second;
+  /// Есть ли заданный дизъюнкт в списке.
+  bool NewClausePresent(const Clause& base, const size_t i_without) {
+    return GetNewClause(base, i_without).second;
   }
 
-  // Добавить дизъюнкт в список
-  bool AddNewClause(Clause& base, size_t out_idx, bool& is_final_result) {
-    auto [clause, present] = GetNewClause(base, out_idx);
-    if (present) {
+  /// Добавить дизъюнкт в список.
+  bool AddNewClause(const Clause& base,
+                    const size_t i_without,
+                    bool& is_final_result) {
+    auto [clause, is_present] = GetNewClause(base, i_without);
+    if (is_present) {
       return false;
     }
 
@@ -71,46 +83,47 @@ class ResolutionSolver {
       is_final_result = true;
     }
 
-    clauses.push_back(clause);
+    clauses_.push_back(std::move(clause));
     return true;
   }
 
-  // Попытаться унифицировать 2 атома, возвращает true, если унифицировано
+  /// Попытаться унифицировать 2 атома, возвращает true, если унифицировано.
   // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-  bool UnifyAtoms(Atom& a1, Atom& a2) {
+  bool UnifyAtoms(const Atom& a1, const Atom& a2) {
     assert(a1.name() == a2.name());
     assert(a1.terminals().size() == a2.terminals().size());
     assert(a1.is_negative() != a2.is_negative());
 
-    // Предварительные списки замен
-    std::vector<std::pair<std::string, std::string>> consts_mappings;
-    std::vector<std::pair<std::string, std::string>> linked_vars;
+    // Предварительные списки замен.
+    using Mapping = std::vector<std::pair<std::string, std::string>>;
+    Mapping consts_mappings;
+    Mapping linked_vars;
 
-    // Сопоставление аргументов предикатов
-    for (size_t i = 0; i < a1.terminals().size(); i++) {
-      Terminal const* arg1 = &a1.terminals()[i];
-      Terminal const* arg2 = &a2.terminals()[i];
+    // Сопоставление аргументов предикатов.
+    for (size_t i = 0; i < a1.terminals().size(); ++i) {
+      const auto* t1 = &a1.terminals()[i];
+      const auto* t2 = &a2.terminals()[i];
 
-      if (arg1->IsConstant() && arg2->IsConstant()) {  // Обе константы
-        if (arg1->name() != arg2->name()) {
+      if (t1->IsConstant() && t2->IsConstant()) {  // Обе константы.
+        if (t1->name() != t2->name()) {
           return false;
         }
-      } else if (arg1->IsVariable() && arg2->IsVariable()) {  // Обе переменные
-        if (arg1->name() != arg2->name()) {
-          linked_vars.emplace_back(arg1->name(), arg2->name());
+      } else if (t1->IsVariable() && t2->IsVariable()) {  // Обе переменные.
+        if (t1->name() != t2->name()) {
+          linked_vars.emplace_back(t1->name(), t2->name());
         }
       } else {  // Константа и переменная
-        if (arg1->IsConstant()) {
-          std::swap(arg1, arg2);  // arg1 - var, arg2 - const
+        if (t1->IsConstant()) {
+          std::swap(t1, t2);  // t1 - var, t2 - const
         }
-        consts_mappings.emplace_back(arg1->name(), arg2->name());
+        consts_mappings.emplace_back(t1->name(), t2->name());
       }
     }
 
     // Объединение связанных переменных
     static int counter = 1;
     std::map<std::string, int> new_vars;
-    for (auto const& [var1, var2] : linked_vars) {
+    for (auto& [var1, var2] : linked_vars) {
       if (new_vars.contains(var1) && new_vars.contains(var2)) {
         const int num1 = new_vars.at(var1);
         const int num2 = new_vars.at(var2);
@@ -132,8 +145,8 @@ class ResolutionSolver {
       }
     }
 
-    // Применение связанных переменных к списку замен констант
-    for (auto const& [var, num] : new_vars) {
+    // Применение связанных переменных к списку замен констант.
+    for (const auto& [var, num] : new_vars) {
       for (auto& [old_v, new_v] : consts_mappings) {
         if (old_v == var) {
           old_v = "@" + std::to_string(num);
@@ -142,7 +155,7 @@ class ResolutionSolver {
     }
 
     // Проверка замен констант на возможность унификации (нет двух разных замен
-    // одной переменной)
+    // одной переменной).
     std::map<std::string, std::string> vars_vals;
     for (auto& [old_v, new_v] : consts_mappings) {
       if (vars_vals.contains(old_v)) {
@@ -154,12 +167,12 @@ class ResolutionSolver {
       }
     }
 
-    // Замена связанных переменных
+    // Замена связанных переменных.
     for (auto const& [var, num] : new_vars) {
       const std::string new_name = "@" + std::to_string(num);
       SubstituteTerminals(var, new_name, false);
     }
-    // Замена констант
+    // Замена констант.
     for (auto const& [old_v, new_v] : vars_vals) {
       SubstituteTerminals(old_v, new_v, true);
     }
@@ -167,55 +180,58 @@ class ResolutionSolver {
   }
 
   // Проверка пары дизъюнктов на наличие контрактной пары, и возможная
-  // унификация
-  bool CheckClauses(Clause& d1, Clause& d2, bool& is_final_result) {
-    for (size_t i1 = 0; i1 < d1.atoms().size(); i1++) {
-      for (size_t i2 = 0; i2 < d2.atoms().size(); i2++) {
-        Atom& atom1 = d1.atoms()[i1];
-        Atom& atom2 = d2.atoms()[i2];
+  // унификация.
+  bool CheckClauses(const Clause& c1, const Clause& c2, bool& is_final_result) {
+    const auto& a1 = c1.atoms();
+    const auto& a2 = c2.atoms();
+
+    for (size_t i = 0; i < a1.size(); ++i) {
+      for (size_t j = 0; j < a2.size(); ++j) {
+        const auto& atom1 = a1[i];
+        const auto& atom2 = a2[j];
 
         if (atom1.name() != atom2.name() ||
             atom1.is_negative() == atom2.is_negative()) {
           continue;
         }
-        if (NewClausePresent(d1, i1) && NewClausePresent(d2, i2)) {
+
+        if (NewClausePresent(c1, i) && NewClausePresent(c2, j)) {
           continue;
         }
 
         std::cout << "Унификация: " << atom1 << " И " << atom2 << '\n';
-        const bool unified = UnifyAtoms(atom1, atom2);
-        if (!unified) {
+        if (!UnifyAtoms(atom1, atom2)) {
           std::cout << "  Невозможна" << '\n';
           continue;
         }
 
         std::cout << "Новые:\n";
-        AddNewClause(d1, i1, is_final_result);
-        AddNewClause(d2, i2, is_final_result);
+        AddNewClause(c1, i, is_final_result);
+        AddNewClause(c2, j, is_final_result);
         return true;
       }
     }
     return false;
   }
 
-  void PrintClauses() {
+  void PrintClauses() const {
     std::cout << "Дизъюнкты:\n";
-    for (Clause const& d : clauses) {
+    for (Clause const& d : clauses_) {
       std::cout << "  " << d << "\n";
     }
     std::cout << "=======================================" << '\n';
   }
 
  public:
-  ResolutionSolver(std::vector<Formula> const& formulas,
-                   Formula const& neg_target) {
-    for (Formula const& f : formulas) {
-      for (Clause const& d : f.clauses()) {
-        clauses.push_back(d);
+  ResolutionSolver(const std::vector<Formula>& formulas,
+                   const Formula& neg_target) {
+    for (const auto& formula : formulas) {
+      for (const auto& clause : formula.clauses()) {
+        clauses_.push_back(clause);
       }
     }
-    for (Clause const& d : neg_target.clauses()) {
-      clauses.push_back(d);
+    for (const auto& clause : neg_target.clauses()) {
+      clauses_.push_back(clause);
     }
   }
 
@@ -226,14 +242,13 @@ class ResolutionSolver {
       PrintClauses();
       is_iter_changed = false;
 
-      for (Clause& d1 : clauses) {
-        for (Clause& d2 : clauses) {
-          if (&d1 == &d2) {
+      for (Clause& c1 : clauses_) {
+        for (Clause& c2 : clauses_) {
+          if (&c1 == &c2) {
             continue;
           }
 
-          const bool match = CheckClauses(d1, d2, is_final_result);
-          if (match) {
+          if (CheckClauses(c1, c2, is_final_result)) {
             is_iter_changed = true;
             break;
           }
