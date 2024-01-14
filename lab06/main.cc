@@ -2,7 +2,6 @@
 #include <cassert>
 #include <cstddef>
 #include <exception>
-#include <initializer_list>
 #include <iostream>
 #include <map>
 #include <string>
@@ -11,12 +10,8 @@
 
 #include "types/atom.h"
 #include "types/clause.h"
+#include "types/formula.h"
 #include "types/terminal.h"
-
-struct Formula {
-  std::vector<Clause> items;
-  Formula(std::initializer_list<Clause> list) : items(list) {}
-};
 
 class ResolutionSolver {
  private:
@@ -216,11 +211,11 @@ class ResolutionSolver {
   ResolutionSolver(std::vector<Formula> const& formulas,
                    Formula const& neg_target) {
     for (Formula const& f : formulas) {
-      for (Clause const& d : f.items) {
+      for (Clause const& d : f.clauses()) {
         disjuncts.push_back(d);
       }
     }
-    for (Clause const& d : neg_target.items) {
+    for (Clause const& d : neg_target.clauses()) {
       disjuncts.push_back(d);
     }
   }

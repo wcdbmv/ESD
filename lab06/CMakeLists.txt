@@ -7,6 +7,7 @@ set(
   HEADERS
   types/atom.h
   types/clause.h
+  types/formula.h
   types/terminal.h
 )
 
@@ -14,6 +15,7 @@ set(
   SOURCES
   types/atom.cc
   types/clause.cc
+  types/formula.cc
   types/terminal.cc
 )
 
