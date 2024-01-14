@@ -15,15 +15,15 @@
 
 class ResolutionSolver {
  private:
-  std::vector<Clause> disjuncts;
+  std::vector<Clause> clauses;
 
   // Заменить все вхождения переменной old_v на переменную или константу nev_v
-  void substitute_terms(const std::string& old_v,
-                        const std::string& new_v,
-                        bool make_const) {
+  void SubstituteTerminals(const std::string& old_v,
+                           const std::string& new_v,
+                           bool make_const) {
     std::cout << "  Замена: " << old_v << " -> " << new_v
               << (make_const ? " const" : "") << '\n';
-    for (Clause& d : disjuncts) {
+    for (Clause& d : clauses) {
       for (Atom& atom : d.atoms()) {
         for (Terminal& term : atom.terminals()) {
           if (term.name() == old_v) {
@@ -39,45 +39,45 @@ class ResolutionSolver {
   }
 
   // Сформировать дизъюнк из base путём исключения атома с индексом out_idx
-  std::pair<Clause, bool> get_new_disjunct(Clause& base, size_t out_idx) {
-    Clause new_disjunct;
+  std::pair<Clause, bool> GetNewClause(Clause& base, size_t out_idx) {
+    Clause new_clause;
     for (size_t j = 0; j < base.atoms().size(); j++) {
       if (j != out_idx) {
-        new_disjunct.atoms().push_back(base.atoms()[j]);
+        new_clause.atoms().push_back(base.atoms()[j]);
       }
     }
 
     const auto present =
-        std::any_of(disjuncts.begin(), disjuncts.end(),
-                    [&](Clause const& d) { return new_disjunct == d; });
+        std::any_of(clauses.begin(), clauses.end(),
+                    [&](Clause const& d) { return new_clause == d; });
 
-    return {new_disjunct, present};
+    return {new_clause, present};
   }
 
   // Есть ли заданный дизъюнкт в списке
-  bool new_disjunct_present(Clause& base, size_t out_idx) {
-    return get_new_disjunct(base, out_idx).second;
+  bool NewClausePresent(Clause& base, size_t out_idx) {
+    return GetNewClause(base, out_idx).second;
   }
 
   // Добавить дизъюнкт в список
-  bool add_new_disjunct(Clause& base, size_t out_idx, bool& is_final_result) {
-    auto [disj, present] = get_new_disjunct(base, out_idx);
+  bool AddNewClause(Clause& base, size_t out_idx, bool& is_final_result) {
+    auto [clause, present] = GetNewClause(base, out_idx);
     if (present) {
       return false;
     }
 
-    std::cout << "  " << disj << '\n';
-    if (disj.atoms().empty()) {
+    std::cout << "  " << clause << '\n';
+    if (clause.atoms().empty()) {
       is_final_result = true;
     }
 
-    disjuncts.push_back(disj);
+    clauses.push_back(clause);
     return true;
   }
 
   // Попытаться унифицировать 2 атома, возвращает true, если унифицировано
   // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-  bool unify_atoms(Atom& a1, Atom& a2) {
+  bool UnifyAtoms(Atom& a1, Atom& a2) {
     assert(a1.name() == a2.name());
     assert(a1.terminals().size() == a2.terminals().size());
     assert(a1.is_negative() != a2.is_negative());
@@ -157,18 +157,18 @@ class ResolutionSolver {
     // Замена связанных переменных
     for (auto const& [var, num] : new_vars) {
       const std::string new_name = "@" + std::to_string(num);
-      substitute_terms(var, new_name, false);
+      SubstituteTerminals(var, new_name, false);
     }
     // Замена констант
     for (auto const& [old_v, new_v] : vars_vals) {
-      substitute_terms(old_v, new_v, true);
+      SubstituteTerminals(old_v, new_v, true);
     }
     return true;
   }
 
   // Проверка пары дизъюнктов на наличие контрактной пары, и возможная
   // унификация
-  bool check_disjuncts(Clause& d1, Clause& d2, bool& is_final_result) {
+  bool CheckClauses(Clause& d1, Clause& d2, bool& is_final_result) {
     for (size_t i1 = 0; i1 < d1.atoms().size(); i1++) {
       for (size_t i2 = 0; i2 < d2.atoms().size(); i2++) {
         Atom& atom1 = d1.atoms()[i1];
@@ -178,29 +178,29 @@ class ResolutionSolver {
             atom1.is_negative() == atom2.is_negative()) {
           continue;
         }
-        if (new_disjunct_present(d1, i1) && new_disjunct_present(d2, i2)) {
+        if (NewClausePresent(d1, i1) && NewClausePresent(d2, i2)) {
           continue;
         }
 
         std::cout << "Унификация: " << atom1 << " И " << atom2 << '\n';
-        const bool unified = unify_atoms(atom1, atom2);
+        const bool unified = UnifyAtoms(atom1, atom2);
         if (!unified) {
           std::cout << "  Невозможна" << '\n';
           continue;
         }
 
         std::cout << "Новые:\n";
-        add_new_disjunct(d1, i1, is_final_result);
-        add_new_disjunct(d2, i2, is_final_result);
+        AddNewClause(d1, i1, is_final_result);
+        AddNewClause(d2, i2, is_final_result);
         return true;
       }
     }
     return false;
   }
 
-  void print_disjuncts() {
+  void PrintClauses() {
     std::cout << "Дизъюнкты:\n";
-    for (Clause const& d : disjuncts) {
+    for (Clause const& d : clauses) {
       std::cout << "  " << d << "\n";
     }
     std::cout << "=======================================" << '\n';
@@ -211,28 +211,28 @@ class ResolutionSolver {
                    Formula const& neg_target) {
     for (Formula const& f : formulas) {
       for (Clause const& d : f.clauses()) {
-        disjuncts.push_back(d);
+        clauses.push_back(d);
       }
     }
     for (Clause const& d : neg_target.clauses()) {
-      disjuncts.push_back(d);
+      clauses.push_back(d);
     }
   }
 
-  void solve() {
+  void Solve() {
     auto is_final_result = false;
     auto is_iter_changed = true;
     while (is_iter_changed) {
-      print_disjuncts();
+      PrintClauses();
       is_iter_changed = false;
 
-      for (Clause& d1 : disjuncts) {
-        for (Clause& d2 : disjuncts) {
+      for (Clause& d1 : clauses) {
+        for (Clause& d2 : clauses) {
           if (&d1 == &d2) {
             continue;
           }
 
-          const bool match = check_disjuncts(d1, d2, is_final_result);
+          const bool match = CheckClauses(d1, d2, is_final_result);
           if (match) {
             is_iter_changed = true;
             break;
@@ -248,7 +248,7 @@ class ResolutionSolver {
       }
     }
 
-    print_disjuncts();
+    PrintClauses();
 
     if (is_iter_changed) {
       std::cout << "Доказано" << '\n';
@@ -302,7 +302,7 @@ int main() {
       },
     };
 
-    ResolutionSolver({ f2_1, f2_2 }, neg_target).solve();
+    ResolutionSolver({ f2_1, f2_2 }, neg_target).Solve();
     return 0;
   }
   catch (const std::exception& exception) {
