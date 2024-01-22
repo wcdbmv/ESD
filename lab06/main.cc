@@ -277,7 +277,7 @@ int main() {
   try {
     constexpr auto kNegative = true;
 
-    // P2(x1, y1) | P5(w1) | !P6(z1)
+    // P2(x1, y1) | P5(w1) | ¬P6(z1)
     // P3(C) | !P4(z1) | P1(x1, y1, z1)
     const Formula f2_1{
         Clause{
@@ -294,33 +294,37 @@ int main() {
         },
     };
 
-    // !P2(A, B) | P5(w2) | P6(x2)
-    // P4(z2) | !P3(x2)
+    // ¬P2(A, B) | P5(w2) | P6(x2)
+    // P4(z2) | ¬P3(x2)
     const Formula f2_2{
         Clause{
             Atom{"P2",
                  {Terminal::Constant("A"), Terminal::Constant("B")},
                  kNegative},
-            Atom { "P5", { Terminal::Variable("w2") } },
-        Atom { "P6", { Terminal::Variable("z2") } },
-    },
-    Clause {
-      Atom { "P4", { Terminal::Variable("z2") } },
-      Atom { "P3", { Terminal::Variable("z2") }, kNegative },
+            Atom{"P5", {Terminal::Variable("w2")}},
+            Atom{"P6", {Terminal::Variable("z2")}},
+        },
+        Clause {
+            Atom{"P4", {Terminal::Variable("z2")}},
+            Atom{"P3", {Terminal::Variable("z2")}, kNegative},
+        },
+    };
+
+    // ¬P1(A, B, C)
+    const Formula neg_target{
+        Clause{
+            Atom{"P1",
+                 {Terminal::Constant("A"), Terminal::Constant("B"),
+                  Terminal::Constant("C")},
+                 kNegative},
       },
     };
 
-    // _ !P1(A, B, C)
-    const Formula neg_target {
-      Clause {
-        Atom { "P1", { Terminal::Constant("A"), Terminal::Constant("B"), Terminal::Constant("C") }, kNegative },
-      },
-    };
-
-    ResolutionSolver({ f2_1, f2_2 }, neg_target).Solve();
+    ResolutionSolver({f2_1, f2_2}, neg_target).Solve();
     return 0;
   }
   catch (const std::exception& exception) {
     std::cout << "[exception] " << exception.what() << '\n';
+    return 1;
   }
 }
