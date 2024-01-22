@@ -20,6 +20,7 @@ class Atom {  // Predicate
   [[nodiscard]] bool is_negative() const;
 
   [[nodiscard]] friend bool operator==(const Atom&, const Atom&) = default;
+  [[nodiscard]] static bool AreOpposite(const Atom&, const Atom&);
 
   friend std::ostream& operator<<(std::ostream&, const Atom&);
 

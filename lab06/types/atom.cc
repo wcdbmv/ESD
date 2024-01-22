@@ -30,6 +30,13 @@ bool Atom::is_negative() const {
   return is_negative_;
 }
 
+bool Atom::AreOpposite(const Atom& lhs, const Atom& rhs) {
+  return lhs.name_ == rhs.name_ &&
+         lhs.terminals_ == rhs.terminals_ &&
+         lhs.is_negative_ != rhs.is_negative_;
+}
+
+
 std::ostream& operator<<(std::ostream& os, const Atom& atom) {
   if (atom.is_negative_) {
     os << "¬";

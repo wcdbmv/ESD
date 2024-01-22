@@ -13,6 +13,9 @@ class Clause {
   [[nodiscard]] const std::vector<Atom>& atoms() const;
   [[nodiscard]] std::vector<Atom>& atoms();
 
+  void Distinct();
+  void RemoveOpposites();
+
   [[nodiscard]] friend bool operator==(const Clause&, const Clause&) = default;
 
   friend std::ostream& operator<<(std::ostream&, const Clause&);

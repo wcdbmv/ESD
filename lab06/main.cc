@@ -1,10 +1,13 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <exception>
 #include <iostream>
 #include <map>
 #include <string>
+#include <tuple>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -16,6 +19,23 @@
 class ResolutionSolver {
  private:
   std::vector<Clause> clauses_;
+  std::unordered_set<size_t> seen_;
+
+  bool IsSeen(const Clause& c1,
+              const size_t i,
+              const Clause& c2,
+              const size_t j) {
+    const auto x = static_cast<uint64_t>(&c1 - clauses_.data());
+    const auto y = static_cast<uint64_t>(&c2 - clauses_.data());
+    const auto ii = static_cast<uint64_t>(i);
+    const auto jj = static_cast<uint64_t>(j);
+    const auto idx = (x << 48ULL) + (ii << 32ULL) + (y << 16ULL) + jj;
+    if (seen_.contains(idx)) {
+      return true;
+    }
+    seen_.emplace(idx);
+    return false;
+  }
 
   /// Заменить все вхождения переменной old на переменную или константу new.
   void SubstituteTerminals(const std::string& old_name,
@@ -40,50 +60,41 @@ class ResolutionSolver {
     }
   }
 
-  /// Сформировать дизъюнк из base путём исключения атома с индексом i_without.
-  std::pair<Clause, bool> GetNewClause(const Clause& base,
-                                       const size_t i_without) {
-    const auto& base_atoms = base.atoms();
-    assert(!base_atoms.empty());
-    assert(base_atoms.size() > i_without);
+  /// Сформировать дизъюнк из a1 и a2 без элементов i и j.
+  static Clause GetNewClause(const std::vector<Atom>& a1,
+                             const size_t i,
+                             const std::vector<Atom>& a2,
+                             const size_t j) {
+    assert(!a1.empty());
+    assert(a1.size() > i);
+    assert(!a2.empty());
+    assert(a2.size() > j);
 
     Clause new_clause;
     auto& new_atoms = new_clause.atoms();
-    new_atoms.reserve(base_atoms.size() - 1);
+    new_atoms.reserve(a1.size() + a2.size() - 2);
 
-    for (size_t i = 0; i < base_atoms.size(); ++i) {
-      if (i != i_without) {
-        new_atoms.push_back(base_atoms[i]);
+    for (size_t k = 0; k < a1.size(); ++k) {
+      if (k != i) {
+        new_atoms.push_back(a1[k]);
+      }
+    }
+    for (size_t m = 0; m < a2.size(); ++m) {
+      if (m != j) {
+        new_atoms.push_back(a2[m]);
       }
     }
 
-    const auto is_present = std::ranges::any_of(
-        clauses_,
-        [&new_clause](const Clause& clause) { return clause == new_clause; });
-
-    return {std::move(new_clause), is_present};
-  }
-
-  /// Есть ли заданный дизъюнкт в списке.
-  bool NewClausePresent(const Clause& base, const size_t i_without) {
-    return GetNewClause(base, i_without).second;
+    return new_clause;
   }
 
   /// Добавить дизъюнкт в список.
-  bool AddNewClause(const Clause& base,
-                    const size_t i_without,
-                    bool& is_final_result) {
-    auto [clause, is_present] = GetNewClause(base, i_without);
-    if (is_present) {
-      return false;
-    }
-
-    std::cout << "  " << clause << '\n';
-    if (clause.atoms().empty()) {
+  bool AddNewClause(Clause new_clause, bool& is_final_result) {
+    if (new_clause.atoms().empty()) {
       is_final_result = true;
     }
 
-    clauses_.push_back(std::move(clause));
+    clauses_.push_back(std::move(new_clause));
     return true;
   }
 
@@ -187,6 +198,10 @@ class ResolutionSolver {
 
     for (size_t i = 0; i < a1.size(); ++i) {
       for (size_t j = 0; j < a2.size(); ++j) {
+        if (IsSeen(c1, i, c2, j)) {
+          continue;
+        }
+
         const auto& atom1 = a1[i];
         const auto& atom2 = a2[j];
 
@@ -195,19 +210,35 @@ class ResolutionSolver {
           continue;
         }
 
-        if (NewClausePresent(c1, i) && NewClausePresent(c2, j)) {
-          continue;
-        }
-
-        std::cout << "Унификация: " << atom1 << " И " << atom2 << '\n';
+        std::cout << "Унификация: " << atom1 << " [" << &c1 - clauses_.data()
+                  << "] И " << atom2 << " [" << &c2 - clauses_.data() << "]\n";
         if (!UnifyAtoms(atom1, atom2)) {
           std::cout << "  Невозможна" << '\n';
           continue;
         }
 
-        std::cout << "Новые:\n";
-        AddNewClause(c1, i, is_final_result);
-        AddNewClause(c2, j, is_final_result);
+        auto new_clause = GetNewClause(a1, i, a2, j);
+        std::cout << "Новый дизъюнкт:\n  " << new_clause << " =====>\n";
+
+        // Убираем термы вида A(Z) or A(Z).
+        new_clause.Distinct();
+
+        // Убираем ситуации вида A(Z) or ~A(Z).
+        new_clause.RemoveOpposites();
+
+        std::cout << "  " << new_clause << '\n';
+
+        const auto is_present =
+            std::ranges::any_of(clauses_, [&new_clause](const Clause& clause) {
+              return clause == new_clause;
+            });
+        if (is_present) {
+          std::cout << "Дизъюнкт уже имеется в списке\n";
+          continue;
+        }
+
+        std::cout << "Добавили дизъюнкт\n";
+        AddNewClause(std::move(new_clause), is_final_result);
         return true;
       }
     }
