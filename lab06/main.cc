@@ -21,15 +21,12 @@ class ResolutionSolver {
   std::vector<Clause> clauses_;
   std::unordered_set<size_t> seen_;
 
-  bool IsSeen(const Clause& c1,
-              const size_t i,
-              const Clause& c2,
-              const size_t j) {
-    const auto x = static_cast<uint64_t>(&c1 - clauses_.data());
-    const auto y = static_cast<uint64_t>(&c2 - clauses_.data());
+  bool IsSeen(const size_t x, const size_t i, const size_t y, const size_t j) {
+    const auto xx = static_cast<uint64_t>(x);
+    const auto yy = static_cast<uint64_t>(y);
     const auto ii = static_cast<uint64_t>(i);
     const auto jj = static_cast<uint64_t>(j);
-    const auto idx = (x << 48ULL) + (ii << 32ULL) + (y << 16ULL) + jj;
+    const auto idx = (xx << 48ULL) + (ii << 32ULL) + (yy << 16ULL) + jj;
     if (seen_.contains(idx)) {
       return true;
     }
@@ -192,13 +189,13 @@ class ResolutionSolver {
 
   // Проверка пары дизъюнктов на наличие контрарной пары, и возможная
   // унификация.
-  bool CheckClauses(const Clause& c1, const Clause& c2, bool& is_final_result) {
-    const auto& a1 = c1.atoms();
-    const auto& a2 = c2.atoms();
+  bool CheckClauses(const size_t x, const size_t y, bool& is_final_result) {
+    const auto& a1 = clauses_[x].atoms();
+    const auto& a2 = clauses_[y].atoms();
 
     for (size_t i = 0; i < a1.size(); ++i) {
       for (size_t j = 0; j < a2.size(); ++j) {
-        if (IsSeen(c1, i, c2, j)) {
+        if (IsSeen(x, i, y, j)) {
           continue;
         }
 
@@ -210,8 +207,8 @@ class ResolutionSolver {
           continue;
         }
 
-        std::cout << "Унификация: " << atom1 << " [" << &c1 - clauses_.data()
-                  << "] И " << atom2 << " [" << &c2 - clauses_.data() << "]\n";
+        std::cout << "Унификация: " << atom1 << " [" << x + 1 << "] И " << atom2
+                  << " [" << y + 1 << "]\n";
         if (!UnifyAtoms(atom1, atom2)) {
           std::cout << "  Невозможна" << '\n';
           continue;
@@ -225,6 +222,8 @@ class ResolutionSolver {
 
         // Убираем ситуации вида A(Z) or ~A(Z).
         new_clause.RemoveOpposites();
+
+        new_clause.Sort();
 
         std::cout << "  " << new_clause << '\n';
 
@@ -247,8 +246,11 @@ class ResolutionSolver {
 
   void PrintClauses() const {
     std::cout << "Дизъюнкты:\n";
-    for (Clause const& d : clauses_) {
-      std::cout << "  " << d << "\n";
+    const auto len = std::to_string(clauses_.size() + 1).length() + 1;
+    for (size_t i = 0; i < clauses_.size(); ++i) {
+      const auto j = std::to_string(i + 1);
+      const auto sp = std::string(len - j.size(), ' ');
+      std::cout << "  " << j << '.' << sp << clauses_[i] << "\n";
     }
     std::cout << "=======================================" << '\n';
   }
@@ -273,13 +275,9 @@ class ResolutionSolver {
       PrintClauses();
       is_iter_changed = false;
 
-      for (Clause& c1 : clauses_) {
-        for (Clause& c2 : clauses_) {
-          if (&c1 == &c2) {
-            continue;
-          }
-
-          if (CheckClauses(c1, c2, is_final_result)) {
+      for (size_t x = 0; x + 1 < clauses_.size(); ++x) {
+        for (size_t y = x + 1; y < clauses_.size(); ++y) {
+          if (CheckClauses(x, y, is_final_result)) {
             is_iter_changed = true;
             break;
           }

@@ -15,6 +15,7 @@ class Clause {
 
   void Distinct();
   void RemoveOpposites();
+  void Sort();
 
   [[nodiscard]] friend bool operator==(const Clause&, const Clause&) = default;
 

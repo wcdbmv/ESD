@@ -4,6 +4,7 @@
 #include <experimental/iterator>
 #include <initializer_list>
 #include <ostream>
+#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -52,6 +53,13 @@ void Clause::RemoveOpposites() {
     }
   }
   atoms_ = std::move(new_atoms);
+}
+
+void Clause::Sort() {
+  std::sort(atoms_.begin(), atoms_.end(), [](const auto& lhs, const auto& rhs) {
+    return (std::stringstream{} << lhs).str() <
+           (std::stringstream{} << rhs).str();
+  });
 }
 
 std::ostream& operator<<(std::ostream& os, const Clause& clause) {
