@@ -120,28 +120,28 @@ class ResolutionSolver {
       }
     }
 
-    // Объединение связанных переменных
+    // Объединение связанных переменных.
     static int counter = 1;
     std::map<std::string, int> new_vars;
     for (auto& [var1, var2] : linked_vars) {
-      if (new_vars.contains(var1) && new_vars.contains(var2)) {
-        const int num1 = new_vars.at(var1);
-        const int num2 = new_vars.at(var2);
+      auto it1 = new_vars.find(var1);
+      auto it2 = new_vars.find(var2);
+      if (it1 != new_vars.end() && it2 != new_vars.end()) {
+        const int num1 = it1->second;
+        const int num2 = it2->second;
         for (auto& [var, num] : new_vars) {
           if (num == num2) {
             num = num1;
           }
         }
+      } else if (it1 != new_vars.end()) {
+        new_vars.emplace(std::move(var2), it1->second);
+      } else if (it2 != new_vars.end()) {
+        new_vars.emplace(std::move(var1), it2->second);
       } else {
-        if (new_vars.contains(var1)) {
-          new_vars.emplace(var2, new_vars.at(var1));
-        } else if (new_vars.contains(var2)) {
-          new_vars.emplace(var1, new_vars.at(var2));
-        } else {
-          const int new_num = counter++;
-          new_vars.emplace(var1, new_num);
-          new_vars.emplace(var2, new_num);
-        }
+        const int new_num = counter++;
+        new_vars.emplace(std::move(var1), new_num);
+        new_vars.emplace(std::move(var2), new_num);
       }
     }
 
@@ -158,12 +158,12 @@ class ResolutionSolver {
     // одной переменной).
     std::map<std::string, std::string> vars_vals;
     for (auto& [old_v, new_v] : consts_mappings) {
-      if (vars_vals.contains(old_v)) {
-        if (vars_vals.at(old_v) != new_v) {
+      if (auto it = vars_vals.find(old_v); it != vars_vals.end()) {
+        if (it->second != new_v) {
           return false;
         }
       } else {
-        vars_vals.emplace(old_v, new_v);
+        vars_vals.emplace(std::move(old_v), std::move(new_v));
       }
     }
 
@@ -179,7 +179,7 @@ class ResolutionSolver {
     return true;
   }
 
-  // Проверка пары дизъюнктов на наличие контрактной пары, и возможная
+  // Проверка пары дизъюнктов на наличие контрарной пары, и возможная
   // унификация.
   bool CheckClauses(const Clause& c1, const Clause& c2, bool& is_final_result) {
     const auto& a1 = c1.atoms();
@@ -238,7 +238,7 @@ class ResolutionSolver {
   void Solve() {
     auto is_final_result = false;
     auto is_iter_changed = true;
-    while (is_iter_changed) {
+    while (is_iter_changed && !is_final_result) {
       PrintClauses();
       is_iter_changed = false;
 
@@ -256,10 +256,6 @@ class ResolutionSolver {
         if (is_iter_changed) {
           break;
         }
-      }
-
-      if (is_final_result) {
-        break;
       }
     }
 
