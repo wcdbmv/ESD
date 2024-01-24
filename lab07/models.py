@@ -20,7 +20,7 @@ def sym2type(sym):
     return OpType(idx)
 
 
-class Quantor:
+class Quantifier:
     def __init__(self, type: OpType, var, op):
         assert type in [OpType.ALL, OpType.EXISTS]
         self.type = type

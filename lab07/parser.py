@@ -25,18 +25,18 @@ predicate = predicate.setParseAction(lambda t: Predicate(t[0], t.arguments.asLis
 operand = predicate | variable
 
 formula = pp.Forward()
-quantors = pp.oneOf("∃ ∀") + variable + formula
-quantors.setParseAction(lambda t: \
-                            Quantor(sym2type(t[0]), t[1], t[2]))
+quantifiers = pp.oneOf("∃ ∀") + variable + formula
+quantifiers.setParseAction(lambda t:
+                           Quantifier(sym2type(t[0]), t[1], t[2]))
 
-expr = pp.infixNotation(operand | quantors, [
+expr = pp.infixNotation(operand | quantifiers, [
     ("¬", 1, pp.opAssoc.RIGHT, lambda t: Operation(OpType.NOT, [t[0][1]])),
     (pp.oneOf("& V → ~"), 2, pp.opAssoc.LEFT, create_operation),
 ])
 formula <<= expr
 
 # formula = pp.infix_notation(operand, [
-#     (pp.one_of("∃ ∀"), 1, pp.opAssoc.RIGHT, lambda t: Quantor(sym2type(t[0][0]), t[0][1])),
+#     (pp.one_of("∃ ∀"), 1, pp.opAssoc.RIGHT, lambda t: Quantifier(sym2type(t[0][0]), t[0][1])),
 #     ("¬", 1, pp.opAssoc.RIGHT, lambda t: Operation(OpType.NOT, [t[0][1]])),
 #     (pp.one_of("& V → ~"), 2, pp.opAssoc.LEFT, lambda t: Operation(sym2type(t[0][1]), t[0][0::2])),
 # ])

@@ -34,7 +34,7 @@ def normalize_formula(op: Operation):
             return op
 
         # если квантор
-        elif isinstance(op, Quantor):
+        elif isinstance(op, Quantifier):
             op.op = remove_not(op.op)
 
         # если операция отрицания
@@ -67,13 +67,13 @@ def normalize_formula(op: Operation):
 
             new_name = f'{var_name}{var_rename_counter[var_name]}'
             op.op.rename_var(var_name, new_name)
-            prefix.append(Quantor(op.type, new_name, None))
+            prefix.append(Quantifier(op.type, new_name, None))
             return rename_vars(op.op)
         return op
 
     op = rename_vars(op)
     pretty_prefix = ' '.join([str(x) for x in prefix])
-    print(f'3. Without quantors:', pretty_prefix, op)
+    print(f'3. Without quantifiers:', pretty_prefix, op)
 
     # 4. преобразование к КНФ (дистрибутивность сверху вниз, пока V не будет только с примитивами)
     def is_disjunct(op):
