@@ -3,6 +3,7 @@ from parser import *
 from models import *
 from typing import *
 
+
 def prepare(facts, rules, goal):
     facts = [r.strip().rstrip() for r in facts.split('\n') if len(r.strip().rstrip()) > 0]
     rules = [r.strip().rstrip() for r in rules.split('\n') if len(r.strip().rstrip()) > 0]
@@ -33,6 +34,7 @@ def prepare(facts, rules, goal):
     print('-------------------------------\n')
 
     return facts_g, rules_g, goal_g
+
 
 class Prover:
     def __init__(self):
@@ -111,7 +113,7 @@ class Prover:
             self.substitute_terms([rule], old_v, new_v, True)
 
         return True
-    
+
     def isRuleApproved(self, rule: Rule):
         for term in rule.in_terms:
             if term not in self.closedFacts:
@@ -187,8 +189,6 @@ class Prover:
         return res
 
 
-
-
 def example2():
     facts = '''
         man(Adam)
@@ -209,9 +209,10 @@ def example2():
         (woman(x) & child(x, y, z)) → mother(x, z)
         '''
 
-    #goal = 'man(Herasim)'
+    # goal = 'man(Herasim)'
     goal = 'mother(Eva, Wallie)'
     return facts, rules, goal
+
 
 def example3():
     facts = '''
@@ -242,6 +243,7 @@ def example3():
     goal = 'grandparent(x, y)'
     return facts, rules, goal
 
+
 def example4():
     facts = '''
         p1(Pepe)
@@ -256,6 +258,7 @@ def example4():
 
     goal = 'p5(Other)'
     return facts, rules, goal
+
 
 def example1():
     facts = '''
@@ -272,7 +275,7 @@ def example1():
     goal = 'p5(Pepe)'
     return facts, rules, goal
 
-    
+
 facts, rules, goal = example1()
 facts, rules, goal = prepare(facts, rules, goal)
 

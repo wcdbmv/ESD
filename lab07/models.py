@@ -3,6 +3,8 @@ from enum import Enum
 from copy import deepcopy
 
 SYMBOLS = '∀∃V&¬→~'
+
+
 class OpType(Enum):
     ALL = 0
     EXISTS = 1
@@ -12,9 +14,11 @@ class OpType(Enum):
     IMPLY = 5
     EQ = 6
 
+
 def sym2type(sym):
     idx = SYMBOLS.index(sym)
     return OpType(idx)
+
 
 class Quantor:
     def __init__(self, type: OpType, var, op):
@@ -32,10 +36,10 @@ class Quantor:
         self.type = OpType.EXISTS if self.type == OpType.ALL else OpType.ALL
         self.op = Operation(OpType.NOT, [self.op])
         return self
-    
+
     def rename_var(self, old_name, new_name):
         self.op.rename_var(old_name, new_name)
-    
+
     def __str__(self):
         if self.op is None:
             return SYMBOLS[self.type.value] + f'{self.var}'
@@ -43,6 +47,7 @@ class Quantor:
 
     def __repr__(self):
         return str(self)
+
 
 class Operation:
     def __init__(self, type: OpType, args: typing.List):
@@ -69,12 +74,13 @@ class Operation:
     def rename_var(self, old_name, new_name):
         for arg in self.args:
             arg.rename_var(old_name, new_name)
-    
+
     def __str__(self):
         def need_brackets(arg):
             return not isinstance(arg, Variable) \
                 and not isinstance(arg, Predicate) \
                 and not (isinstance(arg, Operation) and arg.type == OpType.NOT and self.type != OpType.NOT)
+
         def add_opt_brackets(arg):
             if need_brackets(arg):
                 return f'({arg})'
@@ -107,6 +113,7 @@ class Operation:
             setattr(result, k, deepcopy(v, memo))
         return result
 
+
 class Variable:
     def __init__(self, name, negative=False):
         self.name = name
@@ -115,7 +122,7 @@ class Variable:
     @property
     def is_const(self):
         return not self.is_var
-    
+
     @property
     def is_var(self):
         return self.name[0].islower()
@@ -141,7 +148,7 @@ class Variable:
         if not isinstance(other, Variable):
             return False
         return self.name == other.name and self.negative == other.negative
-    
+
     def __hash__(self):
         return hash(tuple([self.name, self.negative]))
 
@@ -152,6 +159,7 @@ class Variable:
         for k, v in self.__dict__.items():
             setattr(result, k, deepcopy(v, memo))
         return result
+
 
 class Predicate:
     def __init__(self, name, args: typing.List[Variable], negative=False):
@@ -173,7 +181,7 @@ class Predicate:
     def __str__(self):
         x = f'{self.name}({", ".join([str(x) for x in self.args])})'
         return x if not self.negative else f'¬{x}'
-    
+
     def __repr__(self):
         return str(self)
 
@@ -188,7 +196,7 @@ class Predicate:
             if arg1 != arg2:
                 return False
         return True
-    
+
     def __hash__(self):
         return hash(tuple([self.name, self.negative, *self.args]))
 
@@ -199,6 +207,7 @@ class Predicate:
         for k, v in self.__dict__.items():
             setattr(result, k, deepcopy(v, memo))
         return result
+
 
 class Rule:
     """
@@ -235,13 +244,13 @@ class Rule:
 
     def __str__(self):
         return str(self.op)
-    
+
     def __repr__(self):
         return str(self)
 
     def __eq__(self, other):
         return self.op == other.op
-    
+
     def __hash__(self):
         return hash(self.op)
 
