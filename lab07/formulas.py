@@ -5,16 +5,16 @@ from models import *
 
 
 def normalize_formula(op: Operation):
-    # 1 - избавиться от → и ~
+    # 1 - избавиться от → и =
     # Идём по всем элементам
     for x in op.walk():
         if isinstance(x, Operation):
-            # x → y = ¬x V y
+            # x → y = ¬x | y
             if x.type == OpType.IMPLY:
                 x.type = OpType.OR
                 x.args[0] = Operation(OpType.NOT, [x.args[0]])
-            # x ~ y = (x & y) V (¬x & ¬y)
-            elif x.type == OpType.EQ:
+            # x = y = (x & y) | (¬x & ¬y)
+            elif x.type == OpType.EQUAL:
                 x.type = OpType.OR
                 a, b = x.args
                 x.args[0] = Operation(OpType.AND, [a, b])
@@ -22,7 +22,7 @@ def normalize_formula(op: Operation):
                     Operation(OpType.NOT, [copy.deepcopy(a)]),
                     Operation(OpType.NOT, [copy.deepcopy(b)])
                 ])
-    print(f'1. Without → and ~:\t', op)
+    print(f'1. Без → и =:\t', op)
 
     # 2 - пронести отрицание до атомов
     def remove_not(op):
@@ -48,7 +48,7 @@ def normalize_formula(op: Operation):
         return op
 
     op = remove_not(op)
-    print(f'2. Push ¬ to atoms:\t', op)
+    print(f'2. де Морган:\t', op)
 
     # 3. переименование связанных переменных
     prefix = []  # для кванторов
@@ -73,9 +73,9 @@ def normalize_formula(op: Operation):
 
     op = rename_vars(op)
     pretty_prefix = ' '.join([str(x) for x in prefix])
-    print(f'3. Without quantifiers:', pretty_prefix, op)
+    print(f'3. Без кванторов:', pretty_prefix, op)
 
-    # 4. преобразование к КНФ (дистрибутивность сверху вниз, пока V не будет только с примитивами)
+    # 4. преобразование к КНФ (дистрибутивность сверху вниз, пока | не будет только с примитивами)
     def is_disjunct(op):
         if isinstance(op, Variable) or isinstance(op, Predicate):
             return True
@@ -104,7 +104,7 @@ def normalize_formula(op: Operation):
         return
 
     make_disjuncts(op)
-    print(f'4. PNF:\t', op)
+    print(f'4. КНФ:\t', op)
 
     # 5 - извлечение дизъюнктов
     disjuncts = []
@@ -142,16 +142,16 @@ def normalize_formula(op: Operation):
 
     extract_disjuncts(op)
 
-    print('5. Extracted disjuncts:')
+    print('5. Извлечённые дизъюнкты:')
     for i, dj in enumerate(disjuncts):
-        print(f'\t{i + 1}. ' + ' V '.join([str(d) for d in dj]))
+        print(f'\t{i + 1}. ' + ' | '.join([str(d) for d in dj]))
     print('\n')
 
     return prefix, disjuncts
 
 
 if __name__ == '__main__':
-    # res = formula.parseString('∀x ((p1(y) → p2(x, y)) → (p2(x, y))) V p2(x, y)')[0]
+    # res = formula.parseString('∀x ((p1(y) → p2(x, y)) → (p2(x, y))) | p2(x, y)')[0]
     res = formula.parseString('¬(x & y & z)')[0]
     print(res)
 

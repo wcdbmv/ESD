@@ -21,34 +21,37 @@ def prepare(facts, rules, goal):
 
     goal_g = formula.parseString(goal)[0]
 
-    print("facts:")
+    print("Факты:")
     for f in facts_g:
-        print('\t', f)
+        print('\t', f, sep='')
 
-    print("rules:")
+    print("Правила:")
     for r in rules_g:
-        print('\t', r)
+        print('\t', r, sep='')
 
-    print("goal:")
-    print("\t", goal_g)
+    print("Цель:")
+    print("\t", goal_g, sep='')
     print('-------------------------------\n')
 
     return facts_g, rules_g, goal_g
 
 
 class Prover:
-    def __init__(self):
+    def __init__(self, facts: List[Predicate], rules: List[Rule]):
+        self.facts = facts
+        self.rules = rules
         self.closedFacts = []
         self.closedRules = []
         self.counter = 1
 
-    def substitute_terms(self, rules, old_v, new_v, to_const):
+    @staticmethod
+    def substitute_terms(rules, old_v, new_v, to_const):
         # print(f'{old_v} -> {new_v}')
         for rule in rules:
             if rule is not None:
                 rule.rename_var(old_v, new_v, to_const)
 
-    def tryUnify(self, a1, a2, rule):
+    def try_unify(self, a1, a2, rule):
         if a1.name != a2.name or len(a1.args) != len(a2.args):
             return False
 
@@ -114,139 +117,136 @@ class Prover:
 
         return True
 
-    def isRuleApproved(self, rule: Rule):
+    def is_rule_approved(self, rule: Rule):
         for term in rule.in_terms:
             if term not in self.closedFacts:
                 return False
         return True
 
-    def searchRules(self):
-        canFound = False
+    def search_rules(self):
+        can_found = False
         for idx, rule in enumerate(self.rules):
             if not rule.approved and rule not in self.closedRules:
-                wasFound = False
+                was_found = False
                 tmp_rule = copy.deepcopy(rule)
-                print(f"Try approve rule: {rule}")
+                print(f"Попытка доказать правило: {rule}")
                 for i, term in enumerate(rule.in_terms):
                     term = tmp_rule.in_terms[i]
                     if term in self.closedFacts:
-                        print(f"\tTerm {term} already approved")
+                        print(f"\tТерм {term} уже доказан")
                     else:
-                        closedFactsLen = len(self.closedFacts)
-                        for k in range(closedFactsLen):
-                            closedFact = self.closedFacts[k]
-                            if self.tryUnify(closedFact, term, tmp_rule):
+                        closed_facts_len = len(self.closedFacts)
+                        for k in range(closed_facts_len):
+                            closed_fact = self.closedFacts[k]
+                            if self.try_unify(closed_fact, term, tmp_rule):
                                 if tmp_rule not in self.rules:
-                                    print(f"\tAdd rule: {tmp_rule}")
+                                    print(f"\tДобавили правило: {tmp_rule}")
                                     self.rules.append(tmp_rule)
-                                    wasFound = True
+                                    was_found = True
 
                                 if term not in self.closedFacts:
-                                    print(f"\tAdd closed fact: {term}")
+                                    print(f"\tНовый закрытый факт: {term}")
                                     self.closedFacts.append(term)
-                                    wasFound = True
+                                    was_found = True
 
                                 tmp_rule = copy.deepcopy(rule)
                                 term = tmp_rule.in_terms[i]
-                canFound = canFound or wasFound
-                if self.isRuleApproved(rule):
-                    print(f"\tRule: {rule} approved")
+                can_found = can_found or was_found
+                if self.is_rule_approved(rule):
+                    print(f"\tПравило: {rule} доказано")
                     rule.approved = True
                     self.closedRules.append(rule)
                     self.closedFacts.append(rule.out_term)
-                    print(f"\tAdd closed fact: {rule.out_term}")
-                    canFound = True
-                # elif wasFound:
+                    print(f"\tНовый закрытый факт: {rule.out_term}")
+                    can_found = True
+                # elif was_found:
                 #     self.closedRules.append(rule)
 
-        return canFound
+        return can_found
 
-    def prove(self, facts: List[Predicate], rules: List[Rule], goal: Predicate):
-        self.facts = facts
-        self.rules = rules
+    def prove(self, goal: Predicate):
+        self.closedFacts = self.facts
+        can_found = True
 
-        self.closedFacts = facts
-        canFound = True
+        while can_found and goal not in self.closedFacts:
+            can_found = self.search_rules()
 
-        while canFound and goal not in self.closedFacts:
-            canFound = self.searchRules()
-
-            print("\nclosedFacts:")
-            for closedFact in self.closedFacts:
-                print("\t", closedFact)
+            print("\nЗакрытые факты:")
+            for closed_fact in self.closedFacts:
+                print("\t", closed_fact, sep='')
             print()
             print("-------------------------------")
 
-        return self.getMatched(goal)
+        return self.get_matched(goal)
 
-    def getMatched(self, goal):
+    def get_matched(self, goal):
         res = []
         tmp = deepcopy(goal)
-        for closedFact in self.closedFacts:
-            if self.tryUnify(closedFact, tmp, None):
+        for closed_fact in self.closedFacts:
+            if self.try_unify(closed_fact, tmp, None):
                 tmp = deepcopy(goal)
-                res.append(closedFact)
+                res.append(closed_fact)
         return res
 
 
 def example2():
     facts = '''
-        man(Adam)
-        man(Herasim)
-        man(Wallie)
-        man(Pup)
-        woman(Mumu)
-        woman(Eva)
-        
-        child(Herasim, Mumu, Pup)
-        child(Adam, Eva, Wallie)
+        Мужчина(Ахмед)
+        Мужчина(Магомед)
+        Мужчина(Мухамед)
+        Мужчина(Ахмат)
+        Женщина(Патимат)
+        Женщина(Алина)
+
+        Ребёнок(Магомед, Патимат, Ахмат)
+        Ребёнок(Ахмед, Алина, Мухамед)
         '''
 
     rules = '''
-        (man(x) & child(x, y, z)) → father(x, z)
-        (man(x) & child(y, x, z)) → father(x, z)
-        (woman(x) & child(y, x, z)) → mother(x, z)
-        (woman(x) & child(x, y, z)) → mother(x, z)
+        (Мужчина(x) & Ребёнок(x, y, z)) → Отец(x, z)
+        (Мужчина(x) & Ребёнок(y, x, z)) → Отец(x, z)
+        (Женщина(x) & Ребёнок(y, x, z)) → Мать(x, z)
+        (Женщина(x) & Ребёнок(x, y, z)) → Мать(x, z)
         '''
 
-    # goal = 'man(Herasim)'
-    goal = 'mother(Eva, Wallie)'
+    # goal = 'Мужчина(Магомед)'
+    goal = 'Мать(Алина, Мухамед)'
     return facts, rules, goal
 
 
 def example3():
     facts = '''
-        father(Jack, Susan)
-        father(Jack, Ray)
-        father(David, Liza)
-        father(David, John)
-        father(John, Peter)
-        father(John, Mary)
-        mother(Karen, Susan)
-        mother(Karen, Ray)
-        mother(Amy, Liza)
-        mother(Amy, John)
-        mother(Susan, Peter)
-        mother(Susan, Mary)
+        Отец(Денис, Света)
+        Отец(Денис, Рома)
+        Отец(Давид, Лиза)
+        Отец(Давид, Данил)
+        Отец(Данил, Петя)
+        Отец(Данил, Маша)
+        Мать(Карина, Света)
+        Мать(Карина, Рома)
+        Мать(Амина, Лиза)
+        Мать(Амина, Данил)
+        Мать(Света, Петя)
+        Мать(Света, Маша)
         '''
 
     rules = '''
-        father(x, y) → parent(x, y)
-        mother(x, y) → parent(x, y)
+        Отец(x, y) → Родитель(x, y)
+        Мать(x, y) → Родитель(x, y)
 
-        (father(x, z) & parent(z, y)) → grandfather(x, y)
-        (mother(x, z) & parent(z, y)) → grandmother(x, y)
-        (parent(x, z) & parent(z, y)) → grandparent(x, y)
+        (Отец(x, z) & Родитель(z, y)) → Дедушка(x, y)
+        (Мать(x, z) & Родитель(z, y)) → Бабушка(x, y)
+        (Родитель(x, z) & Родитель(z, y)) → ДедушкаИлиБабушка(x, y)
         '''
 
-    # goal = 'grandparent(Amy, Mary)'
-    goal = 'grandparent(x, y)'
+    # goal = 'ДедушкаИлиБабушка(Амина, Маша)'
+    goal = 'ДедушкаИлиБабушка(x, y)'
     return facts, rules, goal
 
 
 def example4():
     facts = '''
-        p1(Pepe)
+        p1(Const)
         '''
 
     rules = '''
@@ -260,9 +260,32 @@ def example4():
     return facts, rules, goal
 
 
+def example5():
+    facts = '''
+        Друг(Паша, Саша)
+        Враг(Саша, Миша)
+        Враг(Миша, Кирилл)
+        '''
+
+    rules = '''
+        (Друг(x, y) & Друг(y, z)) → Друг(x, z)
+        (Враг(x, y) & Враг(y, z)) → Друг(x, z)
+        '''
+
+    # rules = '''
+    #     (Друг(x, y) & Друг(y, z)) → Друг(x, z)
+    #     (Враг(x, y) & Враг(y, z)) → Друг(x, z)
+    #     Друг(x, y) → Друг(y, x)
+    #     Враг(x, y) → Враг(y, x)
+    #     '''
+
+    goal = 'Друг(Паша, Кирилл)'
+    return facts, rules, goal
+
+
 def example1():
     facts = '''
-        p1(Pepe)
+        p1(Const)
         '''
 
     rules = '''
@@ -272,18 +295,23 @@ def example1():
         p1(x) → p4(x)
         '''
 
-    goal = 'p5(Pepe)'
+    goal = 'p5(Const)'
     return facts, rules, goal
 
 
-facts, rules, goal = example1()
-facts, rules, goal = prepare(facts, rules, goal)
+def main():
+    facts, rules, goal = example5()
+    facts, rules, goal = prepare(facts, rules, goal)
 
-p = Prover()
-matched = p.prove(facts, rules, goal)
-if not matched:
-    print('No approved')
-else:
-    print('Result:')
-    for match in matched:
-        print("\t", match)
+    p = Prover(facts, rules)
+    matched = p.prove(goal)
+    if not matched:
+        print('ЛОЖЬ')
+    else:
+        print('ИСТИНА:')
+        for match in matched:
+            print("\t", match, sep='')
+
+
+if __name__ == '__main__':
+    main()

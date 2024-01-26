@@ -13,12 +13,12 @@ def create_operation(t):
 
 
 # Операнды
-variable = pp.Regex(r'[a-zA-Z0-9]+').setResultsName('variable')
+variable = pp.Regex(r'[a-zA-Zа-яА-ЯёЁ0-9]+').setResultsName('variable')
 variable = variable.setParseAction(lambda t: Variable(t[0]))
 
 arguments = pp.Group(pp.Suppress('(') + pp.delimitedList(variable) + pp.Suppress(')')).setResultsName('arguments')
 
-predicate = pp.Regex(r'[a-zA-Z][a-zA-Z0-9]*') + arguments
+predicate = pp.Regex(r'[a-zA-Zа-яА-ЯёЁ][a-zA-Zа-яА-ЯёЁ0-9]*') + arguments
 predicate = predicate.setResultsName('predicate')
 predicate = predicate.setParseAction(lambda t: Predicate(t[0], t.arguments.asList()))
 
@@ -31,17 +31,19 @@ quantifiers.setParseAction(lambda t:
 
 expr = pp.infixNotation(operand | quantifiers, [
     ("¬", 1, pp.opAssoc.RIGHT, lambda t: Operation(OpType.NOT, [t[0][1]])),
-    (pp.oneOf("& V → ~"), 2, pp.opAssoc.LEFT, create_operation),
+    (pp.oneOf("& | → ="), 2, pp.opAssoc.LEFT, create_operation),
 ])
 formula <<= expr
+
 
 # formula = pp.infix_notation(operand, [
 #     (pp.one_of("∃ ∀"), 1, pp.opAssoc.RIGHT, lambda t: Quantifier(sym2type(t[0][0]), t[0][1])),
 #     ("¬", 1, pp.opAssoc.RIGHT, lambda t: Operation(OpType.NOT, [t[0][1]])),
-#     (pp.one_of("& V → ~"), 2, pp.opAssoc.LEFT, lambda t: Operation(sym2type(t[0][1]), t[0][0::2])),
+#     (pp.one_of("& | → ="), 2, pp.opAssoc.LEFT, lambda t: Operation(sym2type(t[0][1]), t[0][0::2])),
 # ])
 
-if __name__ == '__main__':
+
+def main():
     res = formula.parseString('(p2(x) & p3(x) & p4(x)) → p5(x)')
     print(res[0])
 
@@ -51,17 +53,21 @@ if __name__ == '__main__':
     res = formula.parseString('¬(¬x)')
     print(res[0])
 
-    res = formula.parseString('∀x (x V ¬x)')
+    res = formula.parseString('∀x (x | ¬x)')
     print(res[0])
 
     res = formula.parseString('p1(x, y)')
     print(res[0])
 
-    res = formula.parseString('¬(x V z) & (¬x → p1(x, y))')
+    res = formula.parseString('¬(x | z) & (¬x → p1(x, y))')
     print(res[0])
 
-    res = formula.parseString('((x V (x → y)) & (y V z)) & (x ~ z)')
+    res = formula.parseString('((x | (x → y)) & (y | z)) & (x = z)')
     print(res[0])
 
     res = formula.parseString('¬(x & y & z)')
     print(res[0])
+
+
+if __name__ == '__main__':
+    main()

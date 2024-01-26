@@ -2,7 +2,7 @@ import typing
 from enum import Enum
 from copy import deepcopy
 
-SYMBOLS = '∀∃V&¬→~'
+SYMBOLS = '∀∃|&¬→='
 
 
 class OpType(Enum):
@@ -12,7 +12,7 @@ class OpType(Enum):
     AND = 3
     NOT = 4
     IMPLY = 5
-    EQ = 6
+    EQUAL = 6
 
 
 def sym2type(sym):
@@ -21,9 +21,9 @@ def sym2type(sym):
 
 
 class Quantifier:
-    def __init__(self, type: OpType, var, op):
-        assert type in [OpType.ALL, OpType.EXISTS]
-        self.type = type
+    def __init__(self, op_type: OpType, var, op):
+        assert op_type in [OpType.ALL, OpType.EXISTS]
+        self.type = op_type
         self.var = var
         self.op = op
 
@@ -50,9 +50,9 @@ class Quantifier:
 
 
 class Operation:
-    def __init__(self, type: OpType, args: typing.List):
-        assert type not in [OpType.ALL, OpType.EXISTS]
-        self.type = type
+    def __init__(self, op_type: OpType, args: typing.List):
+        assert op_type not in [OpType.ALL, OpType.EXISTS]
+        self.type = op_type
         self.args = args
 
     def walk(self):
@@ -127,7 +127,8 @@ class Variable:
     def is_var(self):
         return self.name[0].islower()
 
-    def walk(self):
+    @staticmethod
+    def walk():
         return []
 
     def negate(self):
@@ -167,7 +168,8 @@ class Predicate:
         self.args = args
         self.negative = negative
 
-    def walk(self):
+    @staticmethod
+    def walk():
         return []
 
     def negate(self):
@@ -215,16 +217,16 @@ class Rule:
     вида x1 & ... & xn -> y1
     """
 
-    def __init__(self, implyOp):
-        assert implyOp.type == OpType.IMPLY
+    def __init__(self, imply_op):
+        assert imply_op.type == OpType.IMPLY
 
-        self.op = implyOp
+        self.op = imply_op
 
         # доказываемый терм
-        self.out_term = implyOp.args[1]
+        self.out_term = imply_op.args[1]
 
         # входные термы
-        in_terms = implyOp.args[0]
+        in_terms = imply_op.args[0]
         if isinstance(in_terms, Operation):
             assert in_terms.type == OpType.AND
             self.in_terms = in_terms.args
